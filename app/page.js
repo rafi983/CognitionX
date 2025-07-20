@@ -1,4 +1,4 @@
-import { Sidebar } from "./components/Sidebar";
+import { Sidebar } from "@/components/Sidebar";
 import { Zap, Sparkles, ArrowRight } from "lucide-react";
 
 export default function WelcomePage() {
@@ -6,21 +6,24 @@ export default function WelcomePage() {
     <div className="flex h-screen mx-auto bg-white max-h-screen">
       <Sidebar />
       <main className="flex-1 flex flex-col bg-white">
-        <div className="flex-1 flex flex-col items-center justify-center p-8">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 mb-8 flex items-center justify-center">
+        <div className="flex-1 flex flex-col items-center justify-center px-8 pt-20 pb-8 overflow-y-auto">
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 mb-8 flex items-center justify-center flex-shrink-0">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-300 via-pink-300 to-blue-300 opacity-80" />
           </div>
+
           <h1 className="text-4xl font-semibold text-gray-800 mb-2">
             Hi there
           </h1>
           <h2 className="text-3xl font-semibold text-gray-800 mb-6">
             How can I help you today?
           </h2>
+
           <p className="text-gray-600 text-center max-w-md mb-8 leading-relaxed">
             I'm a professional looking for an AI assistant that helps with their
             workflows, automates routine tasks, and gives valuable insights
             based on real-time data.
           </p>
+
           <div className="space-y-3 w-full max-w-2xl">
             <button className="w-full flex items-center space-x-3 p-4 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all text-left">
               <Zap className="w-5 h-5 text-yellow-500 flex-shrink-0" />
@@ -43,6 +46,7 @@ export default function WelcomePage() {
             </button>
           </div>
         </div>
+
         <div className="p-6 border-t border-gray-200">
           <div className="relative">
             <input
