@@ -1,15 +1,14 @@
 import localFont from "next/font/local";
 import "./globals.css";
 
-// Setup the local font
-// const satoshi = localFont({
-//     src: [
-//         { path: '../fonts/Satoshi-Light.woff2', weight: '300' },
-//         { path: '../fonts/Satoshi-Regular.woff2', weight: '400' },
-//         { path: '../fonts/Satoshi-Medium.woff2', weight: '500' },
-//         { path: '../fonts/Satoshi-Bold.woff2', weight: '700' },
-//     ],
-// });
+const satoshi = localFont({
+  src: [
+    { path: "./fonts/Satoshi-Light.woff2", weight: "300" },
+    { path: "./fonts/Satoshi-Regular.woff2", weight: "400" },
+    { path: "./fonts/Satoshi-Medium.woff2", weight: "500" },
+    { path: "./fonts/Satoshi-Bold.woff2", weight: "700" },
+  ],
+});
 
 export const metadata = {
   title: "CognitionX",
@@ -19,7 +18,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={satoshi.className}>{children}</body>
     </html>
   );
 }
