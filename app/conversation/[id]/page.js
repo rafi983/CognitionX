@@ -5,6 +5,9 @@ import { Sidebar } from "@/components/Sidebar";
 import { ArrowRight } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 const Message = ({ isAI, content, time }) => (
   <div className="flex items-start space-x-3">
     <div
@@ -14,9 +17,9 @@ const Message = ({ isAI, content, time }) => (
     </div>
     <div className="flex-1">
       <div
-        className={`rounded-2xl px-4 py-3 max-w-3xl ${isAI ? "bg-white border border-gray-200 text-gray-800" : "bg-gray-100 text-gray-800"}`}
+        className={`rounded-2xl px-4 py-3 max-w-3xl prose ${isAI ? "bg-white border border-gray-200 text-gray-800" : "bg-gray-100 text-gray-800"}`}
       >
-        {content}
+        <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
       </div>
       {time && <span className="text-xs text-gray-500 mt-1 block">{time}</span>}
     </div>
@@ -87,7 +90,6 @@ export default function ConversationPage() {
     if (!input.trim()) return;
     setLoading(true);
     setError("");
-    // Optimistically add the user message to the UI
     const optimisticUserMsg = {
       _id: Date.now().toString(),
       role: "user",
@@ -122,11 +124,9 @@ export default function ConversationPage() {
       assistantMsg = data.assistant.content?.trim()
         ? data.assistant
         : { ...data.assistant, content: "[No response from Gemini]" };
-      // Replace the optimistic user message with the real one from DB, then add assistant
       setMessages((prev) => [...prev.slice(0, -1), data.user, assistantMsg]);
     } catch (e) {
       setError("Failed to send message. Try again.");
-      // Remove the optimistic user message if error
       setMessages((prev) => prev.slice(0, -1));
     } finally {
       setLoading(false);
@@ -155,7 +155,6 @@ export default function ConversationPage() {
     <div className="flex h-screen mx-auto bg-white max-h-screen">
       <Sidebar />
       <main className="flex-1 flex flex-col bg-white">
-        {/* Chat Header */}
         <header className="px-8 py-4 border-b border-gray-200 bg-white sticky top-0 z-10">
           <div className="flex items-center space-x-3">
             <div className="w-3 h-3 bg-green-500 rounded-full" />
@@ -164,7 +163,6 @@ export default function ConversationPage() {
             </h1>
           </div>
         </header>
-        {/* Chat Content */}
         <div className="flex-1 flex flex-col p-8 overflow-y-auto space-y-6">
           {messages.map((msg) => (
             <Message
@@ -180,7 +178,6 @@ export default function ConversationPage() {
           {loading && <LoadingSkeleton />}
           <div ref={bottomRef} />
         </div>
-        {/* Input Area */}
         <footer className="p-6 border-t border-gray-200">
           <div className="relative">
             <input
