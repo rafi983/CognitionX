@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
-import { Zap, Sparkles, ArrowRight } from "lucide-react";
+import { Zap, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const SUGGESTIONS = [
@@ -87,23 +87,6 @@ export default function WelcomePage() {
           </p>
 
           <div className="space-y-3 w-full max-w-2xl">
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select Gemini Model
-              </label>
-              <select
-                className="w-full p-2 border border-gray-300 rounded-lg text-gray-800"
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                disabled={loading || models.length === 0}
-              >
-                {models.map((m) => (
-                  <option key={m.name} value={m.name}>
-                    {m.displayName || m.name}
-                  </option>
-                ))}
-              </select>
-            </div>
             {SUGGESTIONS.map((s, i) => (
               <button
                 key={i}
@@ -124,7 +107,7 @@ export default function WelcomePage() {
             <input
               type="text"
               placeholder="Ask me Anything"
-              className="w-full p-4 pr-20 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+              className="w-full p-4 pr-36 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
@@ -132,7 +115,19 @@ export default function WelcomePage() {
               maxLength={1000}
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-              <Sparkles className="w-5 h-5 text-purple-500" />
+              <select
+                className="p-1 pr-6 border border-gray-300 rounded-md text-gray-800 bg-white text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                disabled={models.length === 0}
+                style={{ minWidth: "110px" }}
+              >
+                {models.map((m) => (
+                  <option key={m.name} value={m.name}>
+                    {m.displayName || m.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="flex items-end justify-end mt-3">

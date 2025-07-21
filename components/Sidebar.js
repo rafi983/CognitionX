@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { MessageCircle, Edit, Trash2 } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 
 export function Sidebar() {
   const [conversations, setConversations] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     fetch("/api/conversation")
@@ -36,6 +39,10 @@ export function Sidebar() {
   const handleDelete = async (id) => {
     await fetch(`/api/conversation/${id}`, { method: "DELETE" });
     setConversations((prev) => prev.filter((c) => c._id !== id));
+    // If user is viewing the deleted conversation, redirect to home
+    if (pathname === `/conversation/${id}`) {
+      router.push("/");
+    }
   };
 
   return (
