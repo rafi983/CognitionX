@@ -1,7 +1,42 @@
+"use client";
+
+import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { Zap, Sparkles, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+const SUGGESTIONS = [
+  "It looks like you're writing an email, would you like help drafting it?",
+  "Generate a report on customer feedback for the last 3 months.",
+  "Analyze this month's sales performance",
+];
 
 export default function WelcomePage() {
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  const handleSend = async (prompt) => {
+    if (!prompt) return;
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: prompt.slice(0, 40), message: prompt }),
+      });
+      if (!res.ok) throw new Error("Failed to create conversation");
+      const data = await res.json();
+      router.push(`/conversation/${data.conversation._id}`);
+    } catch (e) {
+      setError("Failed to start chat. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-screen mx-auto bg-white max-h-screen">
       <Sidebar />
@@ -25,25 +60,17 @@ export default function WelcomePage() {
           </p>
 
           <div className="space-y-3 w-full max-w-2xl">
-            <button className="w-full flex items-center space-x-3 p-4 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all text-left">
-              <Zap className="w-5 h-5 text-yellow-500 flex-shrink-0" />
-              <span className="text-gray-700">
-                It looks like you're writing an email, would you like help
-                drafting it?
-              </span>
-            </button>
-            <button className="w-full flex items-center space-x-3 p-4 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all text-left">
-              <Zap className="w-5 h-5 text-yellow-500 flex-shrink-0" />
-              <span className="text-gray-700">
-                Generate a report on customer feedback for the last 3 months.
-              </span>
-            </button>
-            <button className="w-full flex items-center space-x-3 p-4 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all text-left">
-              <Zap className="w-5 h-5 text-yellow-500 flex-shrink-0" />
-              <span className="text-gray-700">
-                Analyze this month's sales performance
-              </span>
-            </button>
+            {SUGGESTIONS.map((s, i) => (
+              <button
+                key={i}
+                className="w-full flex items-center space-x-3 p-4 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all text-left"
+                onClick={() => handleSend(s)}
+                disabled={loading}
+              >
+                <Zap className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                <span className="text-gray-700">{s}</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -52,7 +79,12 @@ export default function WelcomePage() {
             <input
               type="text"
               placeholder="Ask me Anything"
-              className="w-full p-4 pr-20 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-4 pr-20 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
+              disabled={loading}
+              maxLength={1000}
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
               <Sparkles className="w-5 h-5 text-purple-500" />
@@ -60,13 +92,20 @@ export default function WelcomePage() {
           </div>
           <div className="flex items-end justify-end mt-3">
             <div className="flex items-end space-x-4">
-              <span className="text-sm text-gray-500">0/1000</span>
-              <button className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
-                <span className="text-sm">Send</span>
+              <span className="text-sm text-gray-500">{input.length}/1000</span>
+              <button
+                className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                onClick={() => handleSend(input)}
+                disabled={loading || !input.trim()}
+              >
+                <span className="text-sm">
+                  {loading ? "Sending..." : "Send"}
+                </span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
+          {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
         </div>
       </main>
     </div>
