@@ -16,18 +16,24 @@ export async function GET(req, { params }) {
   const messages = await Message.find({ conversationId: id }).sort({
     createdAt: 1,
   });
-  return NextResponse.json({ conversation, messages });
+  const plainConversation = conversation.toObject();
+  return NextResponse.json({
+    conversation,
+    messages,
+    model: conversation.model,
+  });
 }
 
 export async function PATCH(req, { params }) {
   await connectToDatabase();
   const { id } = params;
-  const { title } = await req.json();
-  const conversation = await Conversation.findByIdAndUpdate(
-    id,
-    { title, updatedAt: Date.now() },
-    { new: true },
-  );
+  const { title, model } = await req.json();
+  const update = { updatedAt: Date.now() };
+  if (title !== undefined) update.title = title;
+  if (model !== undefined) update.model = model;
+  const conversation = await Conversation.findByIdAndUpdate(id, update, {
+    new: true,
+  });
   if (!conversation) {
     return NextResponse.json(
       { error: "Conversation not found" },

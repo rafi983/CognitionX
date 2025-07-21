@@ -6,14 +6,14 @@ import { getGeminiResponse } from "@/lib/gemini";
 
 export async function POST(req) {
   await connectToDatabase();
-  const { title, message } = await req.json();
-  if (!title || !message) {
+  const { title, message, model } = await req.json();
+  if (!title || !message || !model) {
     return NextResponse.json(
-      { error: "Title and message are required." },
+      { error: "Title, message, and model are required." },
       { status: 400 },
     );
   }
-  const conversation = await Conversation.create({ title });
+  const conversation = await Conversation.create({ title, model });
   const userMsg = await Message.create({
     conversationId: conversation._id,
     role: "user",
@@ -22,9 +22,10 @@ export async function POST(req) {
   // Call Gemini for the assistant's first response
   let assistantContent = "";
   try {
-    assistantContent = await getGeminiResponse([
-      { role: "user", content: message },
-    ]);
+    assistantContent = await getGeminiResponse(
+      [{ role: "user", content: message }],
+      model,
+    );
   } catch (e) {
     assistantContent = "[No response from Gemini]";
   }

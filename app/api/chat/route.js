@@ -24,15 +24,27 @@ export async function POST(req) {
   });
   // Prepare for Gemini (do not duplicate the latest message)
   const geminiMessages = messages.map((m) => ({
-    role: m.role,
+    role: m.role === "assistant" ? "model" : m.role,
     content: m.content,
   }));
-  // Get Gemini response
+  // Get the conversation to retrieve the model
+  const conversation = await Conversation.findById(conversationId);
+  if (!conversation) {
+    return NextResponse.json(
+      { error: "Conversation not found." },
+      { status: 404 },
+    );
+  }
+  // Get Gemini response using the conversation's model (fallback to default if missing)
   let assistantContent = "";
+  const modelToUse = conversation.model || "gemini-1.5-pro-002";
   try {
-    assistantContent = await getGeminiResponse(geminiMessages);
+    assistantContent = await getGeminiResponse(geminiMessages, modelToUse);
   } catch (e) {
-    return NextResponse.json({ error: "Gemini API error." }, { status: 500 });
+    return NextResponse.json(
+      { error: `Gemini API error: ${e.message}` },
+      { status: 500 },
+    );
   }
   const assistantMsg = await Message.create({
     conversationId,

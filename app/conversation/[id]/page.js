@@ -41,6 +41,9 @@ export default function ConversationPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [models, setModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState("");
+  const [notFound, setNotFound] = useState(false);
   const router = useRouter();
   const bottomRef = useRef(null);
 
@@ -49,14 +52,36 @@ export default function ConversationPage() {
     fetch(`/api/conversation/${conversationId}`)
       .then((res) => res.json())
       .then((data) => {
-        setConversation(data.conversation);
-        setMessages(data.messages || []);
+        if (data.error || !data.conversation) {
+          setNotFound(true);
+          setConversation(null);
+          setMessages([]);
+        } else {
+          setConversation(data.conversation);
+          setMessages(data.messages || []);
+          setSelectedModel(data.conversation?.model || "");
+          setNotFound(false);
+        }
       });
+    fetch("/api/models")
+      .then((res) => res.json())
+      .then((data) => setModels(data.models || []));
   }, [conversationId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleModelChange = async (e) => {
+    const newModel = e.target.value;
+    setSelectedModel(newModel);
+    await fetch(`/api/conversation/${conversationId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: newModel }),
+    });
+    setConversation((prev) => ({ ...prev, model: newModel }));
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -108,6 +133,24 @@ export default function ConversationPage() {
     }
   };
 
+  if (notFound) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-white">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Conversation not found
+          </h2>
+          <p className="text-gray-600 mb-6">
+            This conversation may have been deleted or never existed.
+          </p>
+          <a href="/" className="text-blue-600 hover:underline">
+            Go back to home
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen mx-auto bg-white max-h-screen">
       <Sidebar />
@@ -119,6 +162,20 @@ export default function ConversationPage() {
             <h1 className="text-lg font-semibold text-gray-800 truncate max-w-xs">
               {conversation?.title || "Conversation"}
             </h1>
+            <div className="ml-4">
+              <select
+                className="p-2 border border-gray-300 rounded-lg text-gray-800"
+                value={selectedModel}
+                onChange={handleModelChange}
+                disabled={loading || models.length === 0}
+              >
+                {models.map((m) => (
+                  <option key={m.name} value={m.name}>
+                    {m.displayName || m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </header>
         {/* Chat Content */}

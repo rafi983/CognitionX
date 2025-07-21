@@ -1,31 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { Zap, Sparkles, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const SUGGESTIONS = [
-  "It looks like you're writing an email, would you like help drafting it?",
-  "Generate a report on customer feedback for the last 3 months.",
-  "Analyze this month's sales performance",
+  "Summarize this article for me.",
+  "Help me write a professional email.",
+  "Generate a list of creative marketing ideas.",
 ];
+
+const LoadingSkeleton = () => (
+  <div className="flex items-center space-x-3 animate-pulse mt-8 w-full max-w-2xl">
+    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-300 to-pink-300 flex-shrink-0" />
+    <div className="flex-1">
+      <div className="rounded-2xl px-4 py-3 max-w-2xl bg-gray-100 h-6 mb-2" />
+      <div className="rounded-2xl px-4 py-3 max-w-xl bg-gray-100 h-4" />
+    </div>
+  </div>
+);
 
 export default function WelcomePage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [models, setModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState("");
   const router = useRouter();
 
+  useEffect(() => {
+    fetch("/api/models")
+      .then((res) => res.json())
+      .then((data) => {
+        setModels(data.models || []);
+        if (data.models && data.models.length > 0) {
+          setSelectedModel(data.models[0].name);
+        }
+      });
+  }, []);
+
   const handleSend = async (prompt) => {
-    if (!prompt) return;
+    if (!prompt || !selectedModel) return;
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/conversation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: prompt.slice(0, 40), message: prompt }),
+        body: JSON.stringify({
+          title: prompt.slice(0, 40),
+          message: prompt,
+          model: selectedModel,
+        }),
       });
       if (!res.ok) throw new Error("Failed to create conversation");
       const data = await res.json();
@@ -60,6 +87,23 @@ export default function WelcomePage() {
           </p>
 
           <div className="space-y-3 w-full max-w-2xl">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Select Gemini Model
+              </label>
+              <select
+                className="w-full p-2 border border-gray-300 rounded-lg text-gray-800"
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                disabled={loading || models.length === 0}
+              >
+                {models.map((m) => (
+                  <option key={m.name} value={m.name}>
+                    {m.displayName || m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             {SUGGESTIONS.map((s, i) => (
               <button
                 key={i}
@@ -71,6 +115,7 @@ export default function WelcomePage() {
                 <span className="text-gray-700">{s}</span>
               </button>
             ))}
+            {loading && <LoadingSkeleton />}
           </div>
         </div>
 
