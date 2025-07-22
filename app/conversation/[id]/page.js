@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ImageIcon, X } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
 
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const Message = ({ isAI, content, time, isStreaming }) => (
+const Message = ({ isAI, content, time, isStreaming, imageUrl }) => (
   <div className="flex items-start space-x-3">
     <div
       className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-semibold ${isAI ? "bg-gradient-to-r from-purple-500 to-pink-500" : "bg-blue-500"}`}
@@ -19,6 +20,18 @@ const Message = ({ isAI, content, time, isStreaming }) => (
       <div
         className={`rounded-2xl px-4 py-3 max-w-3xl prose ${isAI ? "bg-white border border-gray-200 text-gray-800" : "bg-gray-100 text-gray-800"}`}
       >
+        {imageUrl && (
+          <div className="mb-3">
+            <Image
+              src={imageUrl}
+              alt="Uploaded image"
+              width={300}
+              height={300}
+              className="rounded-lg object-contain max-h-[300px]"
+              style={{ objectFit: "contain" }}
+            />
+          </div>
+        )}
         <Markdown remarkPlugins={[remarkGfm]}>{content || ""}</Markdown>
         {isStreaming && (
           <span className="inline-block w-2 h-4 ml-1 bg-gray-800 animate-pulse">
@@ -54,6 +67,10 @@ export default function ConversationPage() {
   const [notFound, setNotFound] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedContent, setStreamedContent] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
   const router = useRouter();
   const bottomRef = useRef(null);
 
@@ -94,17 +111,26 @@ export default function ConversationPage() {
   };
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && !imagePreview) return;
     setLoading(true);
     setError("");
     const optimisticUserMsg = {
       _id: Date.now().toString(),
       role: "user",
       content: input,
+      imageUrl: imagePreview,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, optimisticUserMsg]);
     setInput("");
+
+    // Clear image after sending
+    const sentImageUrl = imagePreview;
+    if (imagePreview) {
+      setSelectedImage(null);
+      setImagePreview(null);
+    }
+
     let assistantMsg = null;
     try {
       const res = await fetch("/api/chat", {
@@ -113,6 +139,7 @@ export default function ConversationPage() {
         body: JSON.stringify({
           conversationId,
           message: optimisticUserMsg.content,
+          imageUrl: sentImageUrl,
         }),
       });
       let data;
@@ -141,7 +168,7 @@ export default function ConversationPage() {
   };
 
   const handleSendStreaming = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && !selectedImage) return;
     setLoading(true);
     setIsStreaming(true);
     setError("");
@@ -151,6 +178,7 @@ export default function ConversationPage() {
       _id: Date.now().toString(),
       role: "user",
       content: input,
+      imageUrl: imagePreview,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, optimisticUserMsg]);
@@ -165,13 +193,24 @@ export default function ConversationPage() {
     setMessages((prev) => [...prev, placeholderAssistantMsg]);
     setInput("");
 
+    // Store image data before clearing
+    const imageData = selectedImage ? selectedImage.base64Data : null;
+
+    // Clear image after sending
+    if (imagePreview) {
+      setSelectedImage(null);
+      setImagePreview(null);
+    }
+
     try {
       const response = await fetch("/api/chat/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           conversationId,
-          message: optimisticUserMsg.content,
+          message: input,
+          imageUrl: imagePreview,
+          imageData: imageData,
         }),
       });
 
@@ -252,6 +291,39 @@ export default function ConversationPage() {
     }
   };
 
+  const handleUploadImage = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingImage(true);
+    setError("");
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to upload image");
+      }
+
+      const data = await response.json();
+      setImagePreview(data.url);
+      setSelectedImage({
+        url: data.url,
+        base64Data: data.base64Data,
+      });
+    } catch (e) {
+      setError(`Image upload failed: ${e.message}`);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   if (notFound) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
@@ -288,6 +360,7 @@ export default function ConversationPage() {
               key={msg._id}
               isAI={msg.role === "assistant"}
               content={msg.content}
+              imageUrl={msg.imageUrl}
               isStreaming={msg.isStreaming}
               time={new Date(msg.createdAt).toLocaleTimeString([], {
                 hour: "2-digit",
@@ -311,6 +384,40 @@ export default function ConversationPage() {
               maxLength={1000}
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+              {imagePreview && (
+                <div className="relative mr-2">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="h-8 w-8 rounded object-cover"
+                  />
+                  <button
+                    onClick={() => {
+                      setImagePreview(null);
+                      setSelectedImage(null);
+                    }}
+                    className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 text-white"
+                    title="Remove image"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                disabled={loading || isUploadingImage}
+                title="Upload image"
+              >
+                <ImageIcon size={16} />
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleUploadImage}
+                accept="image/*"
+                className="hidden"
+              />
               <select
                 className="p-1 pr-6 border border-gray-300 rounded-md text-gray-800 bg-white text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
                 value={selectedModel}
@@ -332,7 +439,7 @@ export default function ConversationPage() {
               <button
                 className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
                 onClick={handleSendStreaming}
-                disabled={loading || !input.trim()}
+                disabled={loading || (!input.trim() && !imagePreview)}
               >
                 <span className="text-sm">
                   {loading ? "Sending..." : "Send"}

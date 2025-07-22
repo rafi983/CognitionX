@@ -8,6 +8,7 @@ const MessageSchema = new mongoose.Schema({
   },
   role: { type: String, enum: ["user", "assistant"], required: true },
   content: { type: String, required: true },
+  imageUrl: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 

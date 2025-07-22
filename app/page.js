@@ -31,12 +31,23 @@ export default function WelcomePage() {
 
   useEffect(() => {
     fetch("/api/models")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(
+            `Failed to fetch models: ${res.status} ${res.statusText}`,
+          );
+        }
+        return res.json();
+      })
       .then((data) => {
         setModels(data.models || []);
         if (data.models && data.models.length > 0) {
           setSelectedModel(data.models[0].name);
         }
+      })
+      .catch((error) => {
+        console.error("Error loading models:", error);
+        setError("Failed to load models. Please refresh the page.");
       });
   }, []);
 
@@ -45,6 +56,7 @@ export default function WelcomePage() {
     setLoading(true);
     setError("");
     try {
+      console.log("Sending request with model:", selectedModel);
       const res = await fetch("/api/conversation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,11 +66,26 @@ export default function WelcomePage() {
           model: selectedModel,
         }),
       });
-      if (!res.ok) throw new Error("Failed to create conversation");
+
+      if (!res.ok) {
+        const errorData = await res.text();
+        console.error(
+          `Failed to create conversation: ${res.status}`,
+          errorData,
+        );
+        throw new Error(`Failed to create conversation: ${res.status}`);
+      }
+
       const data = await res.json();
+      if (!data || !data.conversation || !data.conversation._id) {
+        console.error("Invalid response data:", data);
+        throw new Error("Invalid response from server");
+      }
+
       router.push(`/conversation/${data.conversation._id}`);
     } catch (e) {
-      setError("Failed to start chat. Try again.");
+      console.error("Error in handleSend:", e);
+      setError(`Failed to start chat: ${e.message}`);
     } finally {
       setLoading(false);
     }

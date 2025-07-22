@@ -6,11 +6,11 @@ import { getGeminiResponse } from "@/lib/gemini";
 
 export async function POST(req) {
   await connectToDatabase();
-  const { conversationId, message } = await req.json();
+  const { conversationId, message, imageUrl, imageData } = await req.json();
 
-  if (!conversationId || !message) {
+  if (!conversationId || (!message && !imageUrl && !imageData)) {
     return NextResponse.json(
-      { error: "Conversation ID and message are required." },
+      { error: "Conversation ID and either message or image are required." },
       { status: 400 },
     );
   }
@@ -19,7 +19,8 @@ export async function POST(req) {
     const userMsg = await Message.create({
       conversationId,
       role: "user",
-      content: message,
+      content: message || "Image attached",
+      imageUrl: imageUrl || undefined,
     });
 
     const messages = await Message.find({ conversationId }).sort({
@@ -37,10 +38,26 @@ export async function POST(req) {
         ),
     );
 
-    const geminiMessages = validMessages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
+    const geminiMessages = validMessages.map((m, index) => {
+      if (
+        index === validMessages.length - 1 &&
+        m.role === "user" &&
+        imageData
+      ) {
+        return {
+          role: m.role,
+          content: m.content,
+          imageUrl: m.imageUrl,
+          imageData: imageData,
+        };
+      }
+
+      return {
+        role: m.role,
+        content: m.content,
+        imageUrl: m.imageUrl,
+      };
+    });
 
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
@@ -73,6 +90,15 @@ export async function POST(req) {
 
     (async () => {
       try {
+        console.log(
+          `Processing ${geminiMessages.length} messages for conversation ${conversationId}`,
+        );
+
+        // If we have image data, log it to verify it's being passed
+        if (imageData) {
+          console.log("Processing message with image attachment (base64)");
+        }
+
         const fullText = await getGeminiResponse(geminiMessages, modelToUse);
 
         await Message.findByIdAndUpdate(assistantMsg._id, {
@@ -112,7 +138,7 @@ export async function POST(req) {
     return new Response(readable, { headers });
   } catch (error) {
     return NextResponse.json(
-      { error: `Failed to set up response: ${error.message}` },
+      { error: `Failed to set up streaming: ${error.message}` },
       { status: 500 },
     );
   }
