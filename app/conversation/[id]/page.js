@@ -8,7 +8,7 @@ import { useRouter, useParams } from "next/navigation";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const Message = ({ isAI, content, time }) => (
+const Message = ({ isAI, content, time, isStreaming }) => (
   <div className="flex items-start space-x-3">
     <div
       className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-semibold ${isAI ? "bg-gradient-to-r from-purple-500 to-pink-500" : "bg-blue-500"}`}
@@ -19,7 +19,12 @@ const Message = ({ isAI, content, time }) => (
       <div
         className={`rounded-2xl px-4 py-3 max-w-3xl prose ${isAI ? "bg-white border border-gray-200 text-gray-800" : "bg-gray-100 text-gray-800"}`}
       >
-        <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
+        <Markdown remarkPlugins={[remarkGfm]}>{content || ""}</Markdown>
+        {isStreaming && (
+          <span className="inline-block w-2 h-4 ml-1 bg-gray-800 animate-pulse">
+            &#8203;
+          </span>
+        )}
       </div>
       {time && <span className="text-xs text-gray-500 mt-1 block">{time}</span>}
     </div>
@@ -47,6 +52,8 @@ export default function ConversationPage() {
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [notFound, setNotFound] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamedContent, setStreamedContent] = useState("");
   const router = useRouter();
   const bottomRef = useRef(null);
 
@@ -133,6 +140,118 @@ export default function ConversationPage() {
     }
   };
 
+  const handleSendStreaming = async () => {
+    if (!input.trim()) return;
+    setLoading(true);
+    setIsStreaming(true);
+    setError("");
+    setStreamedContent("");
+
+    const optimisticUserMsg = {
+      _id: Date.now().toString(),
+      role: "user",
+      content: input,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticUserMsg]);
+
+    const placeholderAssistantMsg = {
+      _id: `streaming-${Date.now()}`,
+      role: "assistant",
+      content: "",
+      createdAt: new Date().toISOString(),
+      isStreaming: true,
+    };
+    setMessages((prev) => [...prev, placeholderAssistantMsg]);
+    setInput("");
+
+    try {
+      const response = await fetch("/api/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId,
+          message: optimisticUserMsg.content,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to get streaming response");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let accumulatedContent = "";
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.substring(5).trim();
+
+            if (data === "[DONE]") {
+              setIsStreaming(false);
+              continue;
+            }
+
+            try {
+              const parsedData = JSON.parse(data);
+              if (parsedData.text) {
+                accumulatedContent += parsedData.text;
+                setStreamedContent(accumulatedContent);
+
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg._id === placeholderAssistantMsg._id
+                      ? { ...msg, content: accumulatedContent }
+                      : msg,
+                  ),
+                );
+              }
+
+              if (parsedData.error) {
+                setError(`Streaming error: ${parsedData.error}`);
+                break;
+              }
+            } catch (e) {
+              console.error(
+                "Error parsing streaming data:",
+                e,
+                "Raw data:",
+                data,
+              );
+            }
+          }
+        }
+      }
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === placeholderAssistantMsg._id
+            ? { ...msg, isStreaming: false }
+            : msg,
+        ),
+      );
+    } catch (e) {
+      setError(`Streaming error: ${e.message}`);
+      setMessages((prev) =>
+        prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
+      );
+    } finally {
+      setLoading(false);
+      setIsStreaming(false);
+    }
+  };
+
   if (notFound) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
@@ -169,13 +288,14 @@ export default function ConversationPage() {
               key={msg._id}
               isAI={msg.role === "assistant"}
               content={msg.content}
+              isStreaming={msg.isStreaming}
               time={new Date(msg.createdAt).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
               })}
             />
           ))}
-          {loading && <LoadingSkeleton />}
+          {loading && !isStreaming && <LoadingSkeleton />}
           <div ref={bottomRef} />
         </div>
         <footer className="p-6 border-t border-gray-200">
@@ -186,7 +306,7 @@ export default function ConversationPage() {
               className="w-full p-4 pr-36 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onKeyDown={(e) => e.key === "Enter" && handleSendStreaming()}
               disabled={loading}
               maxLength={1000}
             />
@@ -211,7 +331,7 @@ export default function ConversationPage() {
               <span className="text-sm text-gray-500">{input.length}/1000</span>
               <button
                 className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-                onClick={handleSend}
+                onClick={handleSendStreaming}
                 disabled={loading || !input.trim()}
               >
                 <span className="text-sm">

@@ -18,16 +18,13 @@ export async function POST(req) {
     role: "user",
     content: message,
   });
-  // Get all previous messages for context
   const messages = await Message.find({ conversationId }).sort({
     createdAt: 1,
   });
-  // Prepare for Gemini (do not duplicate the latest message)
   const geminiMessages = messages.map((m) => ({
     role: m.role === "assistant" ? "model" : m.role,
     content: m.content,
   }));
-  // Get the conversation to retrieve the model
   const conversation = await Conversation.findById(conversationId);
   if (!conversation) {
     return NextResponse.json(
@@ -35,7 +32,6 @@ export async function POST(req) {
       { status: 404 },
     );
   }
-  // Get Gemini response using the conversation's model (fallback to default if missing)
   let assistantContent = "";
   const modelToUse = conversation.model || "gemini-1.5-pro-002";
   try {
