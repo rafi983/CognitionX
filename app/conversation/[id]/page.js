@@ -9,7 +9,7 @@ import Image from "next/image";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const Message = ({ isAI, content, time, isStreaming, imageUrl }) => (
+const Message = ({ isAI, content, time, isStreaming, imageUrl, imageData }) => (
   <div className="flex items-start space-x-3">
     <div
       className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-semibold ${isAI ? "bg-gradient-to-r from-purple-500 to-pink-500" : "bg-blue-500"}`}
@@ -20,16 +20,32 @@ const Message = ({ isAI, content, time, isStreaming, imageUrl }) => (
       <div
         className={`rounded-2xl px-4 py-3 max-w-3xl prose ${isAI ? "bg-white border border-gray-200 text-gray-800" : "bg-gray-100 text-gray-800"}`}
       >
-        {imageUrl && (
+        {/* Use imageData (base64) if available, otherwise fall back to imageUrl */}
+        {(imageData || imageUrl) && (
           <div className="mb-3">
-            <Image
-              src={imageUrl}
-              alt="Uploaded image"
-              width={300}
-              height={300}
-              className="rounded-lg object-contain max-h-[300px]"
-              style={{ objectFit: "contain" }}
-            />
+            {imageData ? (
+              <img
+                src={imageData}
+                alt="Uploaded image"
+                className="rounded-lg object-contain max-h-[300px] max-w-full"
+              />
+            ) : imageUrl &&
+              (imageUrl.startsWith("/") || imageUrl.startsWith("http")) ? (
+              <Image
+                src={imageUrl}
+                alt="Uploaded image"
+                width={300}
+                height={300}
+                className="rounded-lg object-contain max-h-[300px]"
+                style={{ objectFit: "contain" }}
+              />
+            ) : imageUrl ? (
+              <img
+                src={`data:image/jpeg;base64,${imageUrl}`}
+                alt="Uploaded image"
+                className="rounded-lg object-contain max-h-[300px] max-w-full"
+              />
+            ) : null}
           </div>
         )}
         <Markdown remarkPlugins={[remarkGfm]}>{content || ""}</Markdown>
@@ -118,13 +134,12 @@ export default function ConversationPage() {
       _id: Date.now().toString(),
       role: "user",
       content: input,
-      imageUrl: imagePreview,
+      imageData: imagePreview,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, optimisticUserMsg]);
     setInput("");
 
-    // Clear image after sending
     const sentImageUrl = imagePreview;
     if (imagePreview) {
       setSelectedImage(null);
@@ -178,7 +193,7 @@ export default function ConversationPage() {
       _id: Date.now().toString(),
       role: "user",
       content: input,
-      imageUrl: imagePreview,
+      imageData: imagePreview, // Use imageData instead of imageUrl for base64 data
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, optimisticUserMsg]);
@@ -193,10 +208,8 @@ export default function ConversationPage() {
     setMessages((prev) => [...prev, placeholderAssistantMsg]);
     setInput("");
 
-    // Store image data before clearing
     const imageData = selectedImage ? selectedImage.base64Data : null;
 
-    // Clear image after sending
     if (imagePreview) {
       setSelectedImage(null);
       setImagePreview(null);
@@ -312,7 +325,8 @@ export default function ConversationPage() {
       }
 
       const data = await response.json();
-      setImagePreview(data.url);
+      // Use the base64Data for image preview instead of the URL
+      setImagePreview(data.base64Data);
       setSelectedImage({
         url: data.url,
         base64Data: data.base64Data,
@@ -361,6 +375,7 @@ export default function ConversationPage() {
               isAI={msg.role === "assistant"}
               content={msg.content}
               imageUrl={msg.imageUrl}
+              imageData={msg.imageData}
               isStreaming={msg.isStreaming}
               time={new Date(msg.createdAt).toLocaleTimeString([], {
                 hour: "2-digit",

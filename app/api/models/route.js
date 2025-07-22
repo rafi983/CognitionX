@@ -21,7 +21,6 @@ export async function GET() {
     }
     const data = await res.json();
 
-    // List of deprecated models to exclude
     const deprecatedModels = [
       "gemini-pro-vision",
       "gemini-1.0-pro-vision",
@@ -30,31 +29,67 @@ export async function GET() {
       "gemini-1.0-pro-vision-002",
       "gemini-pro-vision-001",
       "gemini-pro-vision-002",
+
+      "gemini-pro",
+      "gemini-1.0-pro",
+      "gemini-ultra",
+      "gemini-ultra-vision",
     ];
 
-    const models = (data.models || []).filter(
-      (m) =>
-        (m.supportedGenerationMethods || []).includes("generateContent") &&
-        !deprecatedModels.includes(m.name),
-    );
+    const filteredModels = (data.models || []).filter((m) => {
+      const shortModelName = m.name.split("/").pop();
 
-    const recommendedVisionModel = models.find(
-      (m) => m.name === "gemini-1.5-flash",
-    ) ||
-      models.find((m) => m.name === "gemini-1.5-pro") || {
+      const supportsGenerateContent = (
+        m.supportedGenerationMethods || []
+      ).includes("generateContent");
+
+      const isNotDeprecated = !deprecatedModels.some(
+        (deprecated) =>
+          shortModelName === deprecated ||
+          shortModelName.startsWith(deprecated + "-"),
+      );
+
+      const notDeprecatedByPattern = !(
+        m.displayName?.toLowerCase().includes("deprecated") ||
+        m.description?.toLowerCase().includes("deprecated") ||
+        shortModelName?.includes("1.0") // Exclude older 1.0 models as they're likely to be deprecated
+      );
+
+      return (
+        supportsGenerateContent && isNotDeprecated && notDeprecatedByPattern
+      );
+    });
+
+    const preferredModels = [
+      {
         name: "gemini-1.5-flash",
         displayName: "Gemini 1.5 Flash",
-        description: "Efficient multimodal model supporting images and text",
+        description: "Fast, efficient responses with multimodal support",
         supportedGenerationMethods: ["generateContent"],
-      };
+      },
+      {
+        name: "gemini-1.5-pro",
+        displayName: "Gemini 1.5 Pro",
+        description: "Advanced reasoning with multimodal support",
+        supportedGenerationMethods: ["generateContent"],
+      },
+    ];
 
-    // Ensure no duplicates
-    const allModels = [...models];
-    if (!models.some((m) => m.name === recommendedVisionModel.name)) {
-      allModels.push(recommendedVisionModel);
+    let finalModelsList = [...filteredModels];
+
+    for (const model of preferredModels) {
+      if (!finalModelsList.some((m) => m.name.endsWith(model.name))) {
+        finalModelsList.push(model);
+      }
     }
 
-    return NextResponse.json({ models: allModels });
+    finalModelsList.sort((a, b) => {
+      if (a.name.includes("1.5") && !b.name.includes("1.5")) return -1;
+      if (!a.name.includes("1.5") && b.name.includes("1.5")) return 1;
+      return 0;
+    });
+
+    return NextResponse.json({ models: finalModelsList });
   } catch (error) {
     console.error("Error fetching models:", error);
     return NextResponse.json(
