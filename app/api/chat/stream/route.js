@@ -3,6 +3,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import Conversation from "@/models/Conversation";
 import Message from "@/models/Message";
 import { getGeminiResponse } from "@/lib/gemini";
+import { generateTitle } from "@/lib/titleGenerator";
 
 export async function POST(req) {
   await connectToDatabase();
@@ -90,20 +91,17 @@ export async function POST(req) {
 
     (async () => {
       try {
-        console.log(
-          `Processing ${geminiMessages.length} messages for conversation ${conversationId}`,
-        );
-
-        // If we have image data, log it to verify it's being passed
-        if (imageData) {
-          console.log("Processing message with image attachment (base64)");
-        }
-
         const fullText = await getGeminiResponse(geminiMessages, modelToUse);
 
         await Message.findByIdAndUpdate(assistantMsg._id, {
           content: fullText,
         });
+
+        if (messages.length === 2) {
+          try {
+            await generateTitle(conversationId);
+          } catch (error) {}
+        }
 
         const chunkSize = 15;
         for (let i = 0; i < fullText.length; i += chunkSize) {
