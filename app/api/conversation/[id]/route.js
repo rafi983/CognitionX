@@ -27,10 +27,11 @@ export async function GET(req, { params }) {
 export async function PATCH(req, { params }) {
   await connectToDatabase();
   const { id } = params;
-  const { title, model } = await req.json();
+  const { title, model, systemPrompt } = await req.json();
   const update = { updatedAt: Date.now() };
   if (title !== undefined) update.title = title;
   if (model !== undefined) update.model = model;
+  if (systemPrompt !== undefined) update.systemPrompt = systemPrompt;
   const conversation = await Conversation.findByIdAndUpdate(id, update, {
     new: true,
   });

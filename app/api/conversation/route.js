@@ -7,7 +7,8 @@ import { generateTitle } from "@/lib/titleGenerator";
 
 export async function POST(req) {
   await connectToDatabase();
-  const { title, message, model } = await req.json();
+  const { title, message, model, systemPrompt } = await req.json();
+
   if (!title || !message || !model) {
     return NextResponse.json(
       { error: "Title, message, and model are required." },
@@ -15,35 +16,63 @@ export async function POST(req) {
     );
   }
 
-  const conversation = await Conversation.create({ title, model });
-
-  const userMsg = await Message.create({
-    conversationId: conversation._id,
-    role: "user",
-    content: message,
-  });
-
-  let assistantContent = "";
   try {
-    assistantContent = await getGeminiResponse(
-      [{ role: "user", content: message }],
+    const conversation = await Conversation.create({
+      title,
       model,
+      systemPrompt: systemPrompt || "",
+    });
+
+    const userMsg = await Message.create({
+      conversationId: conversation._id,
+      role: "user",
+      content: message,
+    });
+
+    const geminiMessages = [
+      {
+        role: "user",
+        content: message,
+      },
+    ];
+
+    let assistantContent = "";
+    try {
+      assistantContent = await getGeminiResponse(
+        geminiMessages,
+        model,
+        systemPrompt,
+      );
+    } catch (e) {
+      return NextResponse.json(
+        { error: `Gemini API error: ${e.message}` },
+        { status: 500 },
+      );
+    }
+
+    const assistantMsg = await Message.create({
+      conversationId: conversation._id,
+      role: "assistant",
+      content: assistantContent,
+    });
+
+    // Generate title after creating the first exchange
+    try {
+      await generateTitle(conversation._id);
+    } catch (error) {
+      console.error("Title generation failed:", error);
+    }
+
+    return NextResponse.json({
+      conversation,
+      messages: [userMsg, assistantMsg],
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: `Failed to create conversation: ${error.message}` },
+      { status: 500 },
     );
-  } catch (e) {
-    assistantContent = "[No response from Gemini]";
   }
-
-  const assistantMsg = await Message.create({
-    conversationId: conversation._id,
-    role: "assistant",
-    content: assistantContent,
-  });
-
-  try {
-    await generateTitle(conversation._id.toString());
-  } catch (error) {}
-
-  return NextResponse.json({ conversation, messages: [userMsg, assistantMsg] });
 }
 
 export async function GET() {

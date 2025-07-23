@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
-import { ArrowRight, ImageIcon, X } from "lucide-react";
+import { ArrowRight, ImageIcon, X, Settings } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { useSpeech } from "@/hooks/useSpeech";
@@ -10,6 +10,8 @@ import {
   VoiceInputButton,
   TextToSpeechButton,
 } from "@/components/SpeechControls";
+import { PersonaSelector } from "@/components/PersonaSelector";
+import { PERSONAS } from "@/lib/personas";
 
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -107,6 +109,9 @@ export default function ConversationPage() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showPersonaSettings, setShowPersonaSettings] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState("default");
+  const [customPrompt, setCustomPrompt] = useState("");
   const fileInputRef = useRef(null);
   const router = useRouter();
   const bottomRef = useRef(null);
@@ -128,6 +133,20 @@ export default function ConversationPage() {
           setConversation(data.conversation);
           setMessages(data.messages || []);
           setSelectedModel(data.conversation?.model || "");
+
+          const systemPrompt = data.conversation?.systemPrompt || "";
+          const matchingPersona = PERSONAS.find(
+            (p) => p.systemPrompt === systemPrompt,
+          );
+          if (matchingPersona) {
+            setSelectedPersona(matchingPersona.id);
+          } else if (systemPrompt) {
+            setSelectedPersona("custom");
+            setCustomPrompt(systemPrompt);
+          } else {
+            setSelectedPersona("default");
+          }
+
           setNotFound(false);
         }
       });
@@ -135,6 +154,59 @@ export default function ConversationPage() {
       .then((res) => res.json())
       .then((data) => setModels(data.models || []));
   }, [conversationId]);
+
+  const getSystemPrompt = () => {
+    if (selectedPersona === "custom") {
+      return customPrompt;
+    }
+    const persona = PERSONAS.find((p) => p.id === selectedPersona);
+    return persona?.systemPrompt || "";
+  };
+
+  const getCurrentPersona = () => {
+    if (selectedPersona === "custom") {
+      return {
+        id: "custom",
+        name: "Custom",
+        emoji: "🎯",
+        description: "Custom system prompt",
+      };
+    }
+    return PERSONAS.find((p) => p.id === selectedPersona) || PERSONAS[0];
+  };
+
+  const handlePersonaChange = async (persona) => {
+    setSelectedPersona(persona.id);
+    if (persona.id === "custom") {
+      setShowPersonaSettings(true);
+    } else {
+      const newSystemPrompt = persona.systemPrompt || "";
+      try {
+        await fetch(`/api/conversation/${conversationId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ systemPrompt: newSystemPrompt }),
+        });
+        setConversation((prev) => ({ ...prev, systemPrompt: newSystemPrompt }));
+      } catch (error) {
+        console.error("Failed to update persona:", error);
+      }
+    }
+  };
+
+  const handleCustomPromptSave = async () => {
+    try {
+      await fetch(`/api/conversation/${conversationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ systemPrompt: customPrompt }),
+      });
+      setConversation((prev) => ({ ...prev, systemPrompt: customPrompt }));
+      setShowPersonaSettings(false);
+    } catch (error) {
+      console.error("Failed to update custom prompt:", error);
+    }
+  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -508,6 +580,44 @@ export default function ConversationPage() {
             <div className="text-red-500 text-sm mt-2">{speechError}</div>
           )}
         </footer>
+        {showPersonaSettings && (
+          <div className="fixed inset-0 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-semibold mb-4">Select Persona</h3>
+              <div className="space-y-4">
+                <PersonaSelector
+                  selectedPersona={getCurrentPersona()}
+                  onPersonaChange={handlePersonaChange}
+                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Custom Prompt
+                  </label>
+                  <textarea
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-20"
+                    placeholder="Enter your custom system prompt here..."
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={() => setShowPersonaSettings(false)}
+                  className="px-4 py-2 text-sm bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCustomPromptSave}
+                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

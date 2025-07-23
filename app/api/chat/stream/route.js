@@ -91,7 +91,11 @@ export async function POST(req) {
 
     (async () => {
       try {
-        const fullText = await getGeminiResponse(geminiMessages, modelToUse);
+        const fullText = await getGeminiResponse(
+          geminiMessages,
+          modelToUse,
+          conversation.systemPrompt,
+        );
 
         await Message.findByIdAndUpdate(assistantMsg._id, {
           content: fullText,

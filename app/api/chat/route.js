@@ -44,7 +44,11 @@ export async function POST(req) {
   let assistantContent = "";
   const modelToUse = conversation.model || "gemini-1.5-pro-002";
   try {
-    assistantContent = await getGeminiResponse(geminiMessages, modelToUse);
+    assistantContent = await getGeminiResponse(
+      geminiMessages,
+      modelToUse,
+      conversation.systemPrompt,
+    );
   } catch (e) {
     return NextResponse.json(
       { error: `Gemini API error: ${e.message}` },

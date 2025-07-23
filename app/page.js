@@ -6,6 +6,8 @@ import { Zap, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSpeech } from "@/hooks/useSpeech";
 import { VoiceInputButton } from "@/components/SpeechControls";
+import { PersonaSelector } from "@/components/PersonaSelector";
+import { PERSONAS } from "@/lib/personas";
 
 const SUGGESTIONS = [
   "Summarize this article for me.",
@@ -29,6 +31,8 @@ export default function WelcomePage() {
   const [error, setError] = useState("");
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
+  const [selectedPersona, setSelectedPersona] = useState("default");
+  const [customPrompt, setCustomPrompt] = useState("");
   const router = useRouter();
 
   const { isListening, speechError, startListening, stopListening } =
@@ -56,6 +60,14 @@ export default function WelcomePage() {
       });
   }, []);
 
+  const getSystemPrompt = () => {
+    if (selectedPersona === "custom") {
+      return customPrompt;
+    }
+    const persona = PERSONAS.find((p) => p.id === selectedPersona);
+    return persona?.systemPrompt || "";
+  };
+
   const handleSend = async (prompt) => {
     if (!prompt || !selectedModel) return;
     setLoading(true);
@@ -69,6 +81,7 @@ export default function WelcomePage() {
           title: prompt.slice(0, 40),
           message: prompt,
           model: selectedModel,
+          systemPrompt: getSystemPrompt(),
         }),
       });
 
@@ -122,9 +135,8 @@ export default function WelcomePage() {
           </h2>
 
           <p className="text-gray-600 text-center max-w-md mb-8 leading-relaxed">
-            I'm a professional looking for an AI assistant that helps with their
-            workflows, automates routine tasks, and gives valuable insights
-            based on real-time data.
+            Choose a persona to customize the AI's behavior, then start your
+            conversation.
           </p>
 
           <div className="space-y-3 w-full max-w-2xl">
@@ -148,7 +160,7 @@ export default function WelcomePage() {
             <input
               type="text"
               placeholder="Ask me Anything"
-              className="w-full p-4 pr-44 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+              className="w-full p-4 pr-52 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
@@ -156,6 +168,13 @@ export default function WelcomePage() {
               maxLength={1000}
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+              <PersonaSelector
+                selectedPersona={selectedPersona}
+                onPersonaChange={(persona) => setSelectedPersona(persona.id)}
+                customPrompt={customPrompt}
+                onCustomPromptChange={setCustomPrompt}
+                disabled={loading}
+              />
               <VoiceInputButton
                 isListening={isListening}
                 onStartListening={() => startListening(handleVoiceInput, true)}
