@@ -7,7 +7,7 @@ import { generateTitle } from "@/lib/titleGenerator";
 
 export async function POST(req) {
   await connectToDatabase();
-  const { title, message, model, systemPrompt } = await req.json();
+  const { title, message, model, systemPrompt, imageUrl } = await req.json();
 
   if (!title || !message || !model) {
     return NextResponse.json(
@@ -27,12 +27,14 @@ export async function POST(req) {
       conversationId: conversation._id,
       role: "user",
       content: message,
+      imageUrl: imageUrl || undefined,
     });
 
     const geminiMessages = [
       {
         role: "user",
         content: message,
+        ...(imageUrl && { imageData: imageUrl }),
       },
     ];
 
@@ -56,12 +58,9 @@ export async function POST(req) {
       content: assistantContent,
     });
 
-    // Generate title after creating the first exchange
     try {
       await generateTitle(conversation._id);
-    } catch (error) {
-      console.error("Title generation failed:", error);
-    }
+    } catch (error) {}
 
     return NextResponse.json({
       conversation,

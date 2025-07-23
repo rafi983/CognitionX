@@ -116,7 +116,6 @@ export default function ConversationPage() {
   const router = useRouter();
   const bottomRef = useRef(null);
 
-  // Add speech functionality
   const { isListening, speechError, startListening, stopListening } =
     useSpeech();
 
@@ -182,14 +181,24 @@ export default function ConversationPage() {
     } else {
       const newSystemPrompt = persona.systemPrompt || "";
       try {
-        await fetch(`/api/conversation/${conversationId}`, {
+        setLoading(true);
+        const response = await fetch(`/api/conversation/${conversationId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ systemPrompt: newSystemPrompt }),
         });
+
+        if (!response.ok) {
+          throw new Error("Failed to update persona");
+        }
+
+        const result = await response.json();
         setConversation((prev) => ({ ...prev, systemPrompt: newSystemPrompt }));
       } catch (error) {
         console.error("Failed to update persona:", error);
+        setError("Failed to update persona. Please try again.");
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -280,7 +289,8 @@ export default function ConversationPage() {
   };
 
   const handleSendStreaming = async (messageText = null) => {
-    const textToSend = messageText || input;
+    // Ensure textToSend is always a string
+    const textToSend = String(messageText || input || "");
     if (!textToSend.trim() && !selectedImage) return;
     setLoading(true);
     setIsStreaming(true);
@@ -480,8 +490,19 @@ export default function ConversationPage() {
               key={msg._id}
               isAI={msg.role === "assistant"}
               content={msg.content}
-              imageUrl={msg.imageUrl}
-              imageData={msg.imageData}
+              imageUrl={
+                msg.imageUrl &&
+                (msg.imageUrl.startsWith("/") ||
+                  msg.imageUrl.startsWith("http"))
+                  ? msg.imageUrl
+                  : null
+              }
+              imageData={
+                msg.imageData ||
+                (msg.imageUrl && msg.imageUrl.startsWith("data:")
+                  ? msg.imageUrl
+                  : null)
+              }
               isStreaming={msg.isStreaming}
               time={new Date(msg.createdAt).toLocaleTimeString([], {
                 hour: "2-digit",
@@ -497,7 +518,7 @@ export default function ConversationPage() {
             <input
               type="text"
               placeholder="Ask me Anything"
-              className="w-full p-4 pr-44 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+              className="w-full p-4 pr-64 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSendStreaming()}
@@ -524,6 +545,13 @@ export default function ConversationPage() {
                   </button>
                 </div>
               )}
+              <PersonaSelector
+                selectedPersona={selectedPersona}
+                onPersonaChange={handlePersonaChange}
+                customPrompt={customPrompt}
+                onCustomPromptChange={setCustomPrompt}
+                disabled={loading}
+              />
               <VoiceInputButton
                 isListening={isListening}
                 onStartListening={() => startListening(handleVoiceInput, true)}
@@ -580,44 +608,6 @@ export default function ConversationPage() {
             <div className="text-red-500 text-sm mt-2">{speechError}</div>
           )}
         </footer>
-        {showPersonaSettings && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-semibold mb-4">Select Persona</h3>
-              <div className="space-y-4">
-                <PersonaSelector
-                  selectedPersona={getCurrentPersona()}
-                  onPersonaChange={handlePersonaChange}
-                />
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Custom Prompt
-                  </label>
-                  <textarea
-                    value={customPrompt}
-                    onChange={(e) => setCustomPrompt(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none h-20"
-                    placeholder="Enter your custom system prompt here..."
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <button
-                  onClick={() => setShowPersonaSettings(false)}
-                  className="px-4 py-2 text-sm bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCustomPromptSave}
-                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );

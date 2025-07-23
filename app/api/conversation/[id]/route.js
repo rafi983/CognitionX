@@ -6,48 +6,91 @@ import Message from "@/models/Message";
 export async function GET(req, { params }) {
   await connectToDatabase();
   const { id } = params;
-  const conversation = await Conversation.findById(id);
-  if (!conversation) {
+
+  try {
+    const conversation = await Conversation.findById(id);
+    if (!conversation) {
+      return NextResponse.json(
+        { error: "Conversation not found" },
+        { status: 404 },
+      );
+    }
+
+    const messages = await Message.find({ conversationId: id }).sort({
+      createdAt: 1,
+    });
+
+    return NextResponse.json({ conversation, messages });
+  } catch (error) {
     return NextResponse.json(
-      { error: "Conversation not found" },
-      { status: 404 },
+      { error: "Failed to fetch conversation" },
+      { status: 500 },
     );
   }
-  const messages = await Message.find({ conversationId: id }).sort({
-    createdAt: 1,
-  });
-  const plainConversation = conversation.toObject();
-  return NextResponse.json({
-    conversation,
-    messages,
-    model: conversation.model,
-  });
 }
 
 export async function PATCH(req, { params }) {
   await connectToDatabase();
   const { id } = params;
-  const { title, model, systemPrompt } = await req.json();
-  const update = { updatedAt: Date.now() };
-  if (title !== undefined) update.title = title;
-  if (model !== undefined) update.model = model;
-  if (systemPrompt !== undefined) update.systemPrompt = systemPrompt;
-  const conversation = await Conversation.findByIdAndUpdate(id, update, {
-    new: true,
-  });
-  if (!conversation) {
+  const updates = await req.json();
+
+  try {
+    const conversation = await Conversation.findById(id);
+    if (!conversation) {
+      return NextResponse.json(
+        { error: "Conversation not found" },
+        { status: 404 },
+      );
+    }
+
+    // Update the conversation with the provided fields
+    const updatedConversation = await Conversation.findByIdAndUpdate(
+      id,
+      {
+        ...updates,
+        updatedAt: new Date(),
+      },
+      { new: true },
+    );
+
+    return NextResponse.json({
+      conversation: updatedConversation,
+      message: "Conversation updated successfully",
+    });
+  } catch (error) {
     return NextResponse.json(
-      { error: "Conversation not found" },
-      { status: 404 },
+      { error: "Failed to update conversation" },
+      { status: 500 },
     );
   }
-  return NextResponse.json(conversation);
 }
 
 export async function DELETE(req, { params }) {
   await connectToDatabase();
   const { id } = params;
-  await Message.deleteMany({ conversationId: id });
-  await Conversation.findByIdAndDelete(id);
-  return NextResponse.json({ success: true });
+
+  try {
+    const conversation = await Conversation.findById(id);
+    if (!conversation) {
+      return NextResponse.json(
+        { error: "Conversation not found" },
+        { status: 404 },
+      );
+    }
+
+    // Delete all messages associated with this conversation
+    await Message.deleteMany({ conversationId: id });
+
+    // Delete the conversation
+    await Conversation.findByIdAndDelete(id);
+
+    return NextResponse.json({
+      message: "Conversation deleted successfully",
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to delete conversation" },
+      { status: 500 },
+    );
+  }
 }

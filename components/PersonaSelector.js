@@ -12,11 +12,28 @@ export const PersonaSelector = ({
   const [isOpen, setIsOpen] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const dropdownRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const handlePersonaSelect = (persona) => {
     onPersonaChange(persona);
     setIsOpen(false);
-    setShowCustomInput(persona.id === "custom");
+    if (persona.id === "custom") {
+      setShowCustomInput(true);
+      setTimeout(() => textareaRef.current?.focus(), 100);
+    } else {
+      setShowCustomInput(false);
+    }
+  };
+
+  const handleCustomPromptSave = () => {
+    setShowCustomInput(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleCustomPromptSave();
+    }
   };
 
   const toggleDropdown = () => {
@@ -55,7 +72,9 @@ export const PersonaSelector = ({
             <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
           )}
           <ChevronDown
-            className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            className={`w-4 h-4 transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
           />
         </button>
 
@@ -107,13 +126,29 @@ export const PersonaSelector = ({
             Custom Prompt
           </label>
           <textarea
+            ref={textareaRef}
             value={customPrompt}
             onChange={(e) => onCustomPromptChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Define AI behavior..."
-            className="w-full p-2 text-xs border border-amber-300 rounded focus:outline-none focus:ring-1 focus:ring-amber-400 resize-none"
+            className="w-full p-2 text-xs border border-amber-300 rounded focus:outline-none focus:ring-1 focus:ring-amber-400 resize-none text-gray-900 bg-white"
             rows={2}
             disabled={disabled}
           />
+          <div className="flex justify-end mt-2 space-x-2">
+            <button
+              onClick={() => setShowCustomInput(false)}
+              className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleCustomPromptSave}
+              className="px-3 py-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700 transition-colors"
+            >
+              Save
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sidebar } from "@/components/Sidebar";
-import { Zap, ArrowRight } from "lucide-react";
+import { Zap, ArrowRight, ImageIcon, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSpeech } from "@/hooks/useSpeech";
 import { VoiceInputButton } from "@/components/SpeechControls";
@@ -33,6 +33,10 @@ export default function WelcomePage() {
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedPersona, setSelectedPersona] = useState("default");
   const [customPrompt, setCustomPrompt] = useState("");
+  const [, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
   const router = useRouter();
 
   const { isListening, speechError, startListening, stopListening } =
@@ -55,7 +59,6 @@ export default function WelcomePage() {
         }
       })
       .catch((error) => {
-        console.error("Error loading models:", error);
         setError("Failed to load models. Please refresh the page.");
       });
   }, []);
@@ -68,41 +71,69 @@ export default function WelcomePage() {
     return persona?.systemPrompt || "";
   };
 
+  const handleUploadImage = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingImage(true);
+    setError("");
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to upload image");
+      }
+
+      const data = await response.json();
+      setImagePreview(data.base64Data);
+      setSelectedImage({
+        url: data.url,
+        base64Data: data.base64Data,
+      });
+    } catch (e) {
+      setError(`Image upload failed: ${e.message}`);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const handleSend = async (prompt) => {
-    if (!prompt || !selectedModel) return;
+    if (!prompt && !imagePreview) return;
+    if (!selectedModel) return;
     setLoading(true);
     setError("");
     try {
-      console.log("Sending request with model:", selectedModel);
       const res = await fetch("/api/conversation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: prompt.slice(0, 40),
-          message: prompt,
+          title: prompt?.slice(0, 40) || "Image conversation",
+          message: prompt || "Image attached",
           model: selectedModel,
           systemPrompt: getSystemPrompt(),
+          imageUrl: imagePreview,
         }),
       });
 
       if (!res.ok) {
         const errorData = await res.text();
-        console.error(
-          `Failed to create conversation: ${res.status}`,
-          errorData,
-        );
         throw new Error(`Failed to create conversation: ${res.status}`);
       }
 
       const data = await res.json();
       if (!data || !data.conversation || !data.conversation._id) {
-        console.error("Invalid response data:", data);
         throw new Error("Invalid response from server");
       }
 
       router.push(`/conversation/${data.conversation._id}`);
     } catch (e) {
-      console.error("Error in handleSend:", e);
       setError(`Failed to start chat: ${e.message}`);
     } finally {
       setLoading(false);
@@ -160,7 +191,7 @@ export default function WelcomePage() {
             <input
               type="text"
               placeholder="Ask me Anything"
-              className="w-full p-4 pr-52 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+              className="w-full p-4 pr-64 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
@@ -168,12 +199,46 @@ export default function WelcomePage() {
               maxLength={1000}
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+              {imagePreview && (
+                <div className="relative mr-2">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="h-8 w-8 rounded object-cover"
+                  />
+                  <button
+                    onClick={() => {
+                      setImagePreview(null);
+                      setSelectedImage(null);
+                    }}
+                    className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 text-white"
+                    title="Remove image"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              )}
               <PersonaSelector
                 selectedPersona={selectedPersona}
                 onPersonaChange={(persona) => setSelectedPersona(persona.id)}
                 customPrompt={customPrompt}
                 onCustomPromptChange={setCustomPrompt}
                 disabled={loading}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+                disabled={loading || isUploadingImage}
+                title="Upload image"
+              >
+                <ImageIcon size={16} />
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleUploadImage}
+                accept="image/*"
+                className="hidden"
               />
               <VoiceInputButton
                 isListening={isListening}
@@ -202,7 +267,7 @@ export default function WelcomePage() {
               <button
                 className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
                 onClick={() => handleSend(input)}
-                disabled={loading || !input.trim()}
+                disabled={loading || (!input.trim() && !imagePreview)}
               >
                 <span className="text-sm">
                   {loading ? "Sending..." : "Send"}
