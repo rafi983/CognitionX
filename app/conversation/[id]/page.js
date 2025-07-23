@@ -1,233 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sidebar } from "@/components/Sidebar";
-import {
-  ArrowRight,
-  ImageIcon,
-  X,
-  Settings,
-  Copy,
-  RotateCcw,
-  Edit3,
-  Check,
-  X as XIcon,
-  Zap,
-} from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import Image from "next/image";
-import { useSpeech } from "@/hooks/useSpeech";
-import {
-  VoiceInputButton,
-  TextToSpeechButton,
-} from "@/components/SpeechControls";
-import { PersonaSelector } from "@/components/PersonaSelector";
+import { Sidebar } from "@/components/Sidebar";
+import { Message, LoadingSkeleton } from "@/components/Message";
+import { ConversationInput } from "@/components/ConversationInput";
 import { PERSONAS } from "@/lib/personas";
-import {
-  isMagicCommand,
-  parseMagicCommand,
-  executeMagicCommand,
-  getMagicCommandSuggestions,
-  MAGIC_COMMANDS,
-} from "@/lib/magicCommands";
-
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-
-const Message = ({
-  isAI,
-  content,
-  time,
-  isStreaming,
-  imageUrl,
-  imageData,
-  messageId,
-  onRegenerate,
-  onEdit,
-  isLastUserMessage,
-}) => {
-  const { isSpeaking, speak, stopSpeaking } = useSpeech();
-  const [showActions, setShowActions] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState(content);
-  const [copySuccess, setCopySuccess] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(content);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy text: ", err);
-    }
-  };
-
-  const handleEdit = () => {
-    setIsEditing(true);
-    setEditContent(content);
-  };
-
-  const handleSaveEdit = () => {
-    if (editContent.trim() !== content) {
-      onEdit(messageId, editContent.trim());
-    }
-    setIsEditing(false);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditContent(content);
-  };
-
-  const handleRegenerate = () => {
-    onRegenerate();
-  };
-
-  return (
-    <div
-      className="flex items-start space-x-3 group relative"
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-    >
-      <div
-        className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-semibold ${isAI ? "bg-gradient-to-r from-purple-500 to-pink-500" : "bg-blue-500"}`}
-      >
-        {isAI ? "AI" : "U"}
-      </div>
-      <div className="flex-1">
-        <div className="flex items-start space-x-2">
-          <div
-            className={`rounded-2xl px-4 py-3 max-w-3xl prose ${isAI ? "bg-white border border-gray-200 text-gray-800" : "bg-gray-100 text-gray-800"}`}
-          >
-            {(imageData || imageUrl) && (
-              <div className="mb-3">
-                {imageData ? (
-                  <img
-                    src={imageData}
-                    alt="Uploaded image"
-                    className="rounded-lg object-contain max-h-[300px] max-w-full"
-                  />
-                ) : imageUrl &&
-                  (imageUrl.startsWith("/") || imageUrl.startsWith("http")) ? (
-                  <Image
-                    src={imageUrl}
-                    alt="Uploaded image"
-                    width={300}
-                    height={300}
-                    className="rounded-lg object-contain max-h-[300px]"
-                    style={{ objectFit: "contain" }}
-                  />
-                ) : imageUrl ? (
-                  <img
-                    src={`data:image/jpeg;base64,${imageUrl}`}
-                    alt="Uploaded image"
-                    className="rounded-lg object-contain max-h-[300px] max-w-full"
-                  />
-                ) : null}
-              </div>
-            )}
-
-            {isEditing ? (
-              <div className="space-y-3">
-                <textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={Math.max(2, editContent.split("\n").length)}
-                  autoFocus
-                />
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={handleSaveEdit}
-                    className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                  >
-                    <Check size={14} />
-                    <span>Save</span>
-                  </button>
-                  <button
-                    onClick={handleCancelEdit}
-                    className="flex items-center space-x-1 px-3 py-1 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
-                  >
-                    <XIcon size={14} />
-                    <span>Cancel</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <Markdown remarkPlugins={[remarkGfm]}>{content || ""}</Markdown>
-                {isStreaming && (
-                  <span className="inline-block w-2 h-4 ml-1 bg-gray-800 animate-pulse">
-                    &#8203;
-                  </span>
-                )}
-              </>
-            )}
-          </div>
-          {isAI && content && !isStreaming && (
-            <TextToSpeechButton
-              isSpeaking={isSpeaking}
-              onSpeak={speak}
-              onStopSpeaking={stopSpeaking}
-              text={content}
-            />
-          )}
-        </div>
-
-        {/* Action Menu */}
-        {showActions && !isStreaming && !isEditing && (
-          <div className="absolute right-0 top-0 flex items-center space-x-1 bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-10">
-            <button
-              onClick={handleCopy}
-              className={`p-2 rounded-md transition-colors ${copySuccess ? "bg-green-100 text-green-600" : "hover:bg-gray-100 text-gray-600"}`}
-              title="Copy message"
-            >
-              <Copy size={14} />
-            </button>
-
-            {!isAI && (
-              <button
-                onClick={handleEdit}
-                className="p-2 rounded-md hover:bg-gray-100 text-gray-600 transition-colors"
-                title="Edit message"
-              >
-                <Edit3 size={14} />
-              </button>
-            )}
-
-            {isAI && isLastUserMessage && (
-              <button
-                onClick={handleRegenerate}
-                className="p-2 rounded-md hover:bg-gray-100 text-gray-600 transition-colors"
-                title="Regenerate response"
-              >
-                <RotateCcw size={14} />
-              </button>
-            )}
-          </div>
-        )}
-
-        {time && (
-          <span className="text-xs text-gray-500 mt-1 block">{time}</span>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const LoadingSkeleton = () => (
-  <div className="flex items-start space-x-3 animate-pulse">
-    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-300 to-pink-300 flex-shrink-0" />
-    <div className="flex-1">
-      <div className="rounded-2xl px-4 py-3 max-w-3xl bg-gray-100 h-6 mb-2" />
-      <div className="rounded-2xl px-4 py-3 max-w-xl bg-gray-100 h-4" />
-    </div>
-  </div>
-);
+import { useSpeech } from "@/hooks/useSpeech";
+import { useMagicCommands } from "@/hooks/useMagicCommands";
+import { useStreaming } from "@/hooks/useStreaming";
+import { useImageUpload } from "@/hooks/useImageUpload";
+import { isMagicCommand } from "@/lib/magicCommands";
 
 export default function ConversationPage() {
   const params = useParams();
   const conversationId = params.id;
+  const router = useRouter();
+  const bottomRef = useRef(null);
+
+  // Core state
   const [messages, setMessages] = useState([]);
   const [conversation, setConversation] = useState(null);
   const [input, setInput] = useState("");
@@ -236,20 +27,31 @@ export default function ConversationPage() {
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [notFound, setNotFound] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [streamedContent, setStreamedContent] = useState("");
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showPersonaSettings, setShowPersonaSettings] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState("default");
   const [customPrompt, setCustomPrompt] = useState("");
-  const fileInputRef = useRef(null);
-  const router = useRouter();
-  const bottomRef = useRef(null);
 
+  // Custom hooks
   const { isListening, speechError, startListening, stopListening } =
     useSpeech();
+  const { isStreaming, handleStreamingResponse, handleMessageRegenerate } =
+    useStreaming(conversationId);
+  const {
+    selectedImage,
+    imagePreview,
+    isUploadingImage,
+    handleUploadImage,
+    removeImage,
+    setSelectedImage,
+    setImagePreview,
+  } = useImageUpload();
+  const {
+    showCommandSuggestions,
+    commandSuggestions,
+    handleInputChange: handleMagicInputChange,
+    selectCommandSuggestion,
+    executeMagicCommandWithStreaming,
+  } = useMagicCommands(messages, conversationId, selectedModel);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -364,610 +166,74 @@ export default function ConversationPage() {
     setConversation((prev) => ({ ...prev, model: newModel }));
   };
 
-  const handleSend = async () => {
-    if (!input.trim() && !imagePreview) return;
-    setLoading(true);
-    setError("");
-    const optimisticUserMsg = {
-      _id: Date.now().toString(),
-      role: "user",
-      content: input,
-      imageData: imagePreview,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimisticUserMsg]);
-    setInput("");
-
-    const sentImageUrl = imagePreview;
-    if (imagePreview) {
-      setSelectedImage(null);
-      setImagePreview(null);
-    }
-
-    let assistantMsg = null;
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId,
-          message: optimisticUserMsg.content,
-          imageUrl: sentImageUrl,
-        }),
-      });
-      let data;
-      try {
-        data = await res.json();
-      } catch (e) {
-        setError("Invalid response from server.");
-        setLoading(false);
-        return;
-      }
-      if (!res.ok || !data.assistant) {
-        setError(data?.error || "No response from Gemini.");
-        setLoading(false);
-        return;
-      }
-      assistantMsg = data.assistant.content?.trim()
-        ? data.assistant
-        : { ...data.assistant, content: "[No response from Gemini]" };
-      setMessages((prev) => [...prev.slice(0, -1), data.user, assistantMsg]);
-    } catch (e) {
-      setError("Failed to send message. Try again.");
-      setMessages((prev) => prev.slice(0, -1));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSendStreaming = async (messageText = null) => {
-    // Ensure textToSend is always a string
-    const textToSend = String(messageText || input || "");
-    if (!textToSend.trim() && !selectedImage) return;
-    setLoading(true);
-    setIsStreaming(true);
-    setError("");
-    setStreamedContent("");
-
-    const optimisticUserMsg = {
-      _id: Date.now().toString(),
-      role: "user",
-      content: textToSend,
-      imageData: imagePreview,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimisticUserMsg]);
-
-    const placeholderAssistantMsg = {
-      _id: `streaming-${Date.now()}`,
-      role: "assistant",
-      content: "",
-      createdAt: new Date().toISOString(),
-      isStreaming: true,
-    };
-    setMessages((prev) => [...prev, placeholderAssistantMsg]);
-    setInput("");
-
-    const imageData = selectedImage ? selectedImage.base64Data : null;
-
-    if (imagePreview) {
-      setSelectedImage(null);
-      setImagePreview(null);
-    }
-
-    try {
-      const response = await fetch("/api/chat/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId,
-          message: textToSend,
-          imageUrl: imagePreview,
-          imageData: imageData,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to get streaming response");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-      let accumulatedContent = "";
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n\n");
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.substring(5).trim();
-
-            if (data === "[DONE]") {
-              setIsStreaming(false);
-              continue;
-            }
-
-            try {
-              const parsedData = JSON.parse(data);
-              if (parsedData.text) {
-                accumulatedContent += parsedData.text;
-                setStreamedContent(accumulatedContent);
-
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg._id === placeholderAssistantMsg._id
-                      ? { ...msg, content: accumulatedContent }
-                      : msg,
-                  ),
-                );
-              }
-
-              if (parsedData.error) {
-                setError(`Streaming error: ${parsedData.error}`);
-                break;
-              }
-            } catch (e) {
-              console.error(
-                "Error parsing streaming data:",
-                e,
-                "Raw data:",
-                data,
-              );
-            }
-          }
-        }
-      }
-
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === placeholderAssistantMsg._id
-            ? { ...msg, isStreaming: false }
-            : msg,
-        ),
-      );
-    } catch (e) {
-      setError(`Streaming error: ${e.message}`);
-      setMessages((prev) =>
-        prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
-      );
-    } finally {
-      setLoading(false);
-      setIsStreaming(false);
-    }
-  };
-
-  const handleUploadImage = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsUploadingImage(true);
-    setError("");
-
-    const formData = new FormData();
-    formData.append("image", file);
-
-    try {
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to upload image");
-      }
-
-      const data = await response.json();
-      // Use the base64Data for image preview instead of the URL
-      setImagePreview(data.base64Data);
-      setSelectedImage({
-        url: data.url,
-        base64Data: data.base64Data,
-      });
-    } catch (e) {
-      setError(`Image upload failed: ${e.message}`);
-    } finally {
-      setIsUploadingImage(false);
-    }
-  };
-
-  const handleVoiceInput = (transcript, autoSend = false) => {
-    setInput(transcript);
-    if (autoSend && transcript.trim()) {
-      // Pass the transcript directly to avoid state update delays
-      handleSendStreaming(transcript);
-    }
-  };
-
-  // Handle message regeneration
-  const handleMessageRegenerate = async () => {
-    if (messages.length < 2) return;
-
-    // Find the last user message
-    const lastUserMessage = messages
-      .slice()
-      .reverse()
-      .find((msg) => msg.role === "user");
-    if (!lastUserMessage) return;
-
-    // Keep ALL existing messages - don't remove anything
-    // Just add a new AI response to the conversation
-    setLoading(true);
-    setIsStreaming(true);
-    setError("");
-
-    const placeholderAssistantMsg = {
-      _id: `regenerated-${Date.now()}`,
-      role: "assistant",
-      content: "",
-      createdAt: new Date().toISOString(),
-      isStreaming: true,
-    };
-    setMessages((prev) => [...prev, placeholderAssistantMsg]);
-
-    try {
-      const response = await fetch("/api/chat/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId,
-          message: lastUserMessage.content,
-          imageUrl: lastUserMessage.imageData,
-          imageData: lastUserMessage.imageData,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to get streaming response");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-      let accumulatedContent = "";
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n\n");
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.substring(5).trim();
-
-            if (data === "[DONE]") {
-              setIsStreaming(false);
-              continue;
-            }
-
-            try {
-              const parsedData = JSON.parse(data);
-              if (parsedData.text) {
-                accumulatedContent += parsedData.text;
-
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg._id === placeholderAssistantMsg._id
-                      ? { ...msg, content: accumulatedContent }
-                      : msg,
-                  ),
-                );
-              }
-
-              if (parsedData.error) {
-                setError(`Streaming error: ${parsedData.error}`);
-                break;
-              }
-            } catch (e) {
-              console.error("Error parsing streaming data:", e);
-            }
-          }
-        }
-      }
-
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === placeholderAssistantMsg._id
-            ? { ...msg, isStreaming: false }
-            : msg,
-        ),
-      );
-    } catch (e) {
-      setError(`Regeneration error: ${e.message}`);
-      setMessages((prev) =>
-        prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
-      );
-    } finally {
-      setLoading(false);
-      setIsStreaming(false);
-    }
-  };
-
-  // Handle message editing
-  const handleMessageEdit = async (messageId, newContent) => {
-    const messageIndex = messages.findIndex((msg) => msg._id === messageId);
-    if (messageIndex === -1) return;
-
-    // Create new user message with edited content
-    const editedUserMsg = {
-      _id: `edited-${Date.now()}`,
-      role: "user",
-      content: newContent,
-      imageData: messages[messageIndex].imageData,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Keep all original messages and add the new edited message
-    setMessages((prev) => [...prev, editedUserMsg]);
-
-    // Generate new AI response based on the edited message
-    setLoading(true);
-    setIsStreaming(true);
-    setError("");
-
-    const placeholderAssistantMsg = {
-      _id: `streaming-${Date.now()}`,
-      role: "assistant",
-      content: "",
-      createdAt: new Date().toISOString(),
-      isStreaming: true,
-    };
-    setMessages((prev) => [...prev, placeholderAssistantMsg]);
-
-    try {
-      const response = await fetch("/api/chat/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId,
-          message: newContent,
-          imageUrl: messages[messageIndex].imageData,
-          imageData: messages[messageIndex].imageData,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to get streaming response");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let done = false;
-      let accumulatedContent = "";
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n\n");
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.substring(5).trim();
-
-            if (data === "[DONE]") {
-              setIsStreaming(false);
-              continue;
-            }
-
-            try {
-              const parsedData = JSON.parse(data);
-              if (parsedData.text) {
-                accumulatedContent += parsedData.text;
-
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg._id === placeholderAssistantMsg._id
-                      ? { ...msg, content: accumulatedContent }
-                      : msg,
-                  ),
-                );
-              }
-
-              if (parsedData.error) {
-                setError(`Streaming error: ${parsedData.error}`);
-                break;
-              }
-            } catch (e) {
-              console.error("Error parsing streaming data:", e);
-            }
-          }
-        }
-      }
-
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === placeholderAssistantMsg._id
-            ? { ...msg, isStreaming: false }
-            : msg,
-        ),
-      );
-    } catch (e) {
-      setError(`Editing error: ${e.message}`);
-      setMessages((prev) =>
-        prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
-      );
-    } finally {
-      setLoading(false);
-      setIsStreaming(false);
-    }
-  };
-
-  // Command handling
-  const handleCommand = async (command) => {
-    // Parse and execute the command
-    const parsedCommand = parseMagicCommand(command);
-    if (!parsedCommand) return;
-
-    setLoading(true);
-    setError("");
-
-    try {
-      // Execute the command and get the response
-      const response = await executeMagicCommand(parsedCommand, conversationId);
-
-      // Handle the response (e.g., update the conversation, show a message, etc.)
-      if (response?.message) {
-        setMessages((prev) => [...prev, response.message]);
-      }
-
-      if (response?.error) {
-        setError(response.error);
-      }
-    } catch (e) {
-      setError(`Command error: ${e.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Autocomplete handling
-  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState([]);
-  const [showingAutocomplete, setShowingAutocomplete] = useState(false);
-
-  const [showCommandSuggestions, setShowCommandSuggestions] = useState(false);
-  const [commandSuggestions, setCommandSuggestions] = useState([]);
-
+  // Event handlers
   const handleInputChange = (value) => {
-    setInput(value);
-
-    // Check if input is a magic command
-    if (isMagicCommand(value)) {
-      const query = value.slice(1).toLowerCase();
-      const suggestions = getMagicCommandSuggestions(query);
-      setCommandSuggestions(suggestions);
-      setShowCommandSuggestions(true);
-    } else {
-      setShowCommandSuggestions(false);
-      setCommandSuggestions([]);
-    }
-  };
-
-  const handleMagicCommand = async (commandInput) => {
-    const { command, args, isValid } = parseMagicCommand(commandInput);
-
-    if (!isValid) {
-      setError(
-        `Unknown command: ${command}. Type /help to see available commands.`,
-      );
-      return;
-    }
-
-    setLoading(true);
-    setIsStreaming(true);
-    setError("");
-
-    // Add user message for the command
-    const commandMsg = {
-      _id: Date.now().toString(),
-      role: "user",
-      content: commandInput,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, commandMsg]);
-
-    // Create streaming placeholder for magic command response
-    const placeholderAssistantMsg = {
-      _id: `magic-streaming-${Date.now()}`,
-      role: "assistant",
-      content: "",
-      createdAt: new Date().toISOString(),
-      isStreaming: true,
-    };
-    setMessages((prev) => [...prev, placeholderAssistantMsg]);
-    setInput("");
-    setShowCommandSuggestions(false);
-
-    try {
-      // Get the magic command result
-      const result = await executeMagicCommand(
-        command,
-        args,
-        messages,
-        conversationId,
-        selectedModel,
-      );
-
-      if (result.success) {
-        // Simulate streaming by displaying the result gradually
-        const fullContent = result.result;
-        const words = fullContent.split(" ");
-        let currentContent = "";
-
-        // Stream the content word by word for a better UX
-        for (let i = 0; i < words.length; i++) {
-          currentContent += (i > 0 ? " " : "") + words[i];
-
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg._id === placeholderAssistantMsg._id
-                ? { ...msg, content: currentContent }
-                : msg,
-            ),
-          );
-
-          // Add a small delay to simulate streaming
-          await new Promise((resolve) => setTimeout(resolve, 50));
-        }
-
-        // Mark streaming as complete
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg._id === placeholderAssistantMsg._id
-              ? { ...msg, isStreaming: false }
-              : msg,
-          ),
-        );
-      } else {
-        setError(result.error);
-        // Remove the placeholder message on error
-        setMessages((prev) =>
-          prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
-        );
-      }
-    } catch (error) {
-      setError(`Command failed: ${error.message}`);
-      // Remove the placeholder message on error
-      setMessages((prev) =>
-        prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
-      );
-    } finally {
-      setLoading(false);
-      setIsStreaming(false);
-    }
+    handleMagicInputChange(value, setInput);
   };
 
   const handleSubmit = async () => {
     if (!input.trim() && !imagePreview) return;
 
-    // Check if input is a magic command
     if (isMagicCommand(input)) {
-      await handleMagicCommand(input);
+      await executeMagicCommandWithStreaming({
+        commandInput: input,
+        setMessages,
+        setInput,
+        setLoading,
+        setIsStreaming,
+        setError,
+      });
     } else {
-      await handleSendStreaming();
+      await handleStreamingResponse({
+        messageText: input,
+        imagePreview,
+        imageData: selectedImage?.base64Data,
+        setMessages,
+        setInput,
+        setLoading,
+        setError,
+        setSelectedImage,
+        setImagePreview,
+        selectedImage,
+      });
     }
   };
 
-  const selectCommandSuggestion = (suggestion) => {
-    setInput(suggestion.command);
-    setShowCommandSuggestions(false);
-    setCommandSuggestions([]);
+  const handleMessageRegeneration = () => {
+    handleMessageRegenerate({
+      messages,
+      setMessages,
+      setLoading,
+      setError,
+    });
+  };
+
+  const handleMessageEdit = async (messageId, newContent) => {
+    await handleStreamingResponse({
+      messageText: newContent,
+      imagePreview: null,
+      imageData: null,
+      setMessages,
+      setInput: () => {},
+      setLoading,
+      setError,
+      setSelectedImage,
+      setImagePreview,
+      selectedImage: null,
+    });
+  };
+
+  const handleVoiceInput = (transcript, autoSend = false) => {
+    setInput(transcript);
+    if (autoSend && transcript.trim()) {
+      setTimeout(() => {
+        handleSubmit();
+      }, 100);
+    }
+  };
+
+  const handleSelectCommandSuggestion = (suggestion) => {
+    selectCommandSuggestion(suggestion, setInput);
   };
 
   if (notFound) {
@@ -1000,10 +266,9 @@ export default function ConversationPage() {
             </h1>
           </div>
         </header>
+
         <div className="flex-1 flex flex-col p-8 overflow-y-auto space-y-6">
           {messages.map((msg, index) => {
-            // Determine if this AI message should show regenerate button
-            // It should show if it's the last AI message and there's a user message before it
             const isLastAIMessage =
               msg.role === "assistant" && index === messages.length - 1;
             const hasPreviousUserMessage =
@@ -1033,7 +298,7 @@ export default function ConversationPage() {
                   minute: "2-digit",
                 })}
                 messageId={msg._id}
-                onRegenerate={handleMessageRegenerate}
+                onRegenerate={handleMessageRegeneration}
                 onEdit={handleMessageEdit}
                 isLastUserMessage={isLastAIMessage && hasPreviousUserMessage}
               />
@@ -1042,153 +307,34 @@ export default function ConversationPage() {
           {loading && !isStreaming && <LoadingSkeleton />}
           <div ref={bottomRef} />
         </div>
-        <footer className="p-6 border-t border-gray-200">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Ask me Anything"
-              className="w-full p-4 pr-64 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
-              value={input}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSubmit();
-                }
-              }}
-              disabled={loading}
-              maxLength={1000}
-            />
-            {showingAutocomplete && (
-              <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1">
-                {autocompleteSuggestions.length === 0 ? (
-                  <div className="p-2 text-gray-500 text-sm">
-                    No suggestions found
-                  </div>
-                ) : (
-                  autocompleteSuggestions.map((suggestion) => (
-                    <div
-                      key={suggestion}
-                      className="p-2 cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSuggestionSelect(suggestion)}
-                    >
-                      {suggestion}
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-            {showCommandSuggestions && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
-                {commandSuggestions.length === 0 ? (
-                  <div className="p-2 text-gray-500 text-sm">
-                    No command suggestions
-                  </div>
-                ) : (
-                  commandSuggestions.map((suggestion) => (
-                    <div
-                      key={suggestion.command}
-                      className="p-3 cursor-pointer hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-b-0"
-                      onClick={() => selectCommandSuggestion(suggestion)}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg">{suggestion.icon}</span>
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-800">
-                            {suggestion.command}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {suggestion.description}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-              {imagePreview && (
-                <div className="relative mr-2">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="h-8 w-8 rounded object-cover"
-                  />
-                  <button
-                    onClick={() => {
-                      setImagePreview(null);
-                      setSelectedImage(null);
-                    }}
-                    className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 text-white"
-                    title="Remove image"
-                  >
-                    <X size={10} />
-                  </button>
-                </div>
-              )}
-              <PersonaSelector
-                selectedPersona={selectedPersona}
-                onPersonaChange={handlePersonaChange}
-                customPrompt={customPrompt}
-                onCustomPromptChange={setCustomPrompt}
-                disabled={loading}
-              />
-              <VoiceInputButton
-                isListening={isListening}
-                onStartListening={() => startListening(handleVoiceInput, true)}
-                onStopListening={stopListening}
-                disabled={loading}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
-                disabled={loading || isUploadingImage}
-                title="Upload image"
-              >
-                <ImageIcon size={16} />
-              </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleUploadImage}
-                accept="image/*"
-                className="hidden"
-              />
-              <select
-                className="p-1 pr-6 border border-gray-300 rounded-md text-gray-800 bg-white text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
-                value={selectedModel}
-                onChange={handleModelChange}
-                disabled={models.length === 0}
-                style={{ minWidth: "110px" }}
-              >
-                {models.map((m) => (
-                  <option key={m.name} value={m.name}>
-                    {m.displayName || m.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="flex items-center justify-end mt-3">
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">{input.length}/1000</span>
-              <button
-                className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-                onClick={handleSubmit}
-                disabled={loading || (!input.trim() && !imagePreview)}
-              >
-                <span className="text-sm">
-                  {loading ? "Sending..." : "Send"}
-                </span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-          {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
-          {speechError && (
-            <div className="text-red-500 text-sm mt-2">{speechError}</div>
-          )}
-        </footer>
+
+        <ConversationInput
+          input={input}
+          setInput={setInput}
+          onSubmit={handleSubmit}
+          onInputChange={handleInputChange}
+          onVoiceInput={handleVoiceInput}
+          onImageUpload={(e) => handleUploadImage(e, setError)}
+          imagePreview={imagePreview}
+          onRemoveImage={removeImage}
+          selectedPersona={selectedPersona}
+          onPersonaChange={handlePersonaChange}
+          customPrompt={customPrompt}
+          onCustomPromptChange={setCustomPrompt}
+          models={models}
+          selectedModel={selectedModel}
+          onModelChange={handleModelChange}
+          loading={loading}
+          isUploadingImage={isUploadingImage}
+          isListening={isListening}
+          startListening={startListening}
+          stopListening={stopListening}
+          showCommandSuggestions={showCommandSuggestions}
+          commandSuggestions={commandSuggestions}
+          onSelectCommandSuggestion={handleSelectCommandSuggestion}
+          speechError={speechError}
+          error={error}
+        />
       </main>
     </div>
   );
