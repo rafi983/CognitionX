@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MessageCircle, Edit, Trash2 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+import { ExportButton } from "./ExportButton";
 
 export function Sidebar() {
   const [conversations, setConversations] = useState([]);
@@ -114,6 +115,9 @@ export function Sidebar() {
                 >
                   <Edit className="w-4 h-4 text-gray-400" />
                 </button>
+                <div className="hidden group-hover:block">
+                  <ExportButton conversationId={convo._id} />
+                </div>
                 <button
                   className="ml-1 p-1 hover:bg-gray-700 rounded hidden group-hover:block"
                   onClick={() => handleDelete(convo._id)}

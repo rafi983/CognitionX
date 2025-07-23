@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { Message, LoadingSkeleton } from "@/components/Message";
 import { ConversationInput } from "@/components/ConversationInput";
+import { ExportButton } from "@/components/ExportButton";
 import { PERSONAS } from "@/lib/personas";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useMagicCommands } from "@/hooks/useMagicCommands";
@@ -259,11 +260,21 @@ export default function ConversationPage() {
       <Sidebar />
       <main className="flex-1 flex flex-col bg-white">
         <header className="px-8 py-4 border-b border-gray-200 bg-white sticky top-0 z-10">
-          <div className="flex items-center space-x-3">
-            <div className="w-3 h-3 bg-green-500 rounded-full" />
-            <h1 className="text-lg font-semibold text-gray-800 truncate max-w-xs">
-              {conversation?.title || "Conversation"}
-            </h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-green-500 rounded-full" />
+              <h1 className="text-lg font-semibold text-gray-800 truncate max-w-xs">
+                {conversation?.title || "Conversation"}
+              </h1>
+            </div>
+            {conversation && (
+              <div className="flex items-center space-x-2">
+                <ExportButton
+                  conversationId={conversationId}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                />
+              </div>
+            )}
           </div>
         </header>
 
