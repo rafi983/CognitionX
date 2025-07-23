@@ -5,6 +5,7 @@ import { TextToSpeechButton } from "@/components/SpeechControls";
 import { useSpeech } from "@/hooks/useSpeech";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { CodeBlock } from "@/components/CodeBlock";
 
 export const Message = ({
   isAI,
@@ -55,6 +56,58 @@ export const Message = ({
     onRegenerate();
   };
 
+  // Custom components for react-markdown
+  const markdownComponents = {
+    code: CodeBlock,
+    pre: ({ children }) => <div>{children}</div>, // Remove default pre wrapper
+    // Enhanced blockquote styling
+    blockquote: ({ children }) => (
+      <blockquote className="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 text-gray-700 italic">
+        {children}
+      </blockquote>
+    ),
+    // Enhanced table styling
+    table: ({ children }) => (
+      <div className="overflow-x-auto my-4">
+        <table className="min-w-full border border-gray-200 rounded-lg">
+          {children}
+        </table>
+      </div>
+    ),
+    th: ({ children }) => (
+      <th className="px-4 py-2 bg-gray-100 border-b border-gray-200 text-left font-semibold text-gray-800">
+        {children}
+      </th>
+    ),
+    td: ({ children }) => (
+      <td className="px-4 py-2 border-b border-gray-100 text-gray-700">
+        {children}
+      </td>
+    ),
+    // Enhanced list styling
+    ul: ({ children }) => (
+      <ul className="list-disc list-inside space-y-1 my-2 text-gray-700">
+        {children}
+      </ul>
+    ),
+    ol: ({ children }) => (
+      <ol className="list-decimal list-inside space-y-1 my-2 text-gray-700">
+        {children}
+      </ol>
+    ),
+    // Enhanced link styling
+    a: ({ href, children }) => (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 hover:text-blue-800 underline transition-colors"
+      >
+        {children}
+      </a>
+    ),
+  };
+
   return (
     <div
       className="flex items-start space-x-3 group relative"
@@ -71,7 +124,7 @@ export const Message = ({
       <div className="flex-1">
         <div className="flex items-start space-x-2">
           <div
-            className={`rounded-2xl px-4 py-3 max-w-3xl prose ${
+            className={`rounded-2xl px-4 py-3 max-w-3xl prose prose-sm max-w-none ${
               isAI
                 ? "bg-white border border-gray-200 text-gray-800"
                 : "bg-gray-100 text-gray-800"
@@ -132,14 +185,19 @@ export const Message = ({
                 </div>
               </div>
             ) : (
-              <>
-                <Markdown remarkPlugins={[remarkGfm]}>{content || ""}</Markdown>
+              <div className="prose prose-sm max-w-none prose-code:bg-transparent prose-pre:bg-transparent prose-pre:p-0">
+                <Markdown
+                  remarkPlugins={[remarkGfm]}
+                  components={markdownComponents}
+                >
+                  {content || ""}
+                </Markdown>
                 {isStreaming && (
                   <span className="inline-block w-2 h-4 ml-1 bg-gray-800 animate-pulse">
                     &#8203;
                   </span>
                 )}
-              </>
+              </div>
             )}
           </div>
           {isAI && content && !isStreaming && (

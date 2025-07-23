@@ -16,8 +16,6 @@ import {
 } from "@/lib/magicCommands";
 
 const SUGGESTIONS = [
-  "Summarize this article for me.",
-  "Help me write a professional email.",
   "Generate a list of creative marketing ideas.",
   "/help - Show all available magic commands",
   "/brainstorm marketing ideas for a coffee shop",
