@@ -5,60 +5,81 @@ import { Sidebar } from "@/components/Sidebar";
 import { ArrowRight, ImageIcon, X } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
+import { useSpeech } from "@/hooks/useSpeech";
+import {
+  VoiceInputButton,
+  TextToSpeechButton,
+} from "@/components/SpeechControls";
 
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const Message = ({ isAI, content, time, isStreaming, imageUrl, imageData }) => (
-  <div className="flex items-start space-x-3">
-    <div
-      className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-semibold ${isAI ? "bg-gradient-to-r from-purple-500 to-pink-500" : "bg-blue-500"}`}
-    >
-      {isAI ? "AI" : "U"}
-    </div>
-    <div className="flex-1">
+const Message = ({ isAI, content, time, isStreaming, imageUrl, imageData }) => {
+  const { isSpeaking, speak, stopSpeaking } = useSpeech();
+
+  return (
+    <div className="flex items-start space-x-3">
       <div
-        className={`rounded-2xl px-4 py-3 max-w-3xl prose ${isAI ? "bg-white border border-gray-200 text-gray-800" : "bg-gray-100 text-gray-800"}`}
+        className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-semibold ${isAI ? "bg-gradient-to-r from-purple-500 to-pink-500" : "bg-blue-500"}`}
       >
-        {/* Use imageData (base64) if available, otherwise fall back to imageUrl */}
-        {(imageData || imageUrl) && (
-          <div className="mb-3">
-            {imageData ? (
-              <img
-                src={imageData}
-                alt="Uploaded image"
-                className="rounded-lg object-contain max-h-[300px] max-w-full"
-              />
-            ) : imageUrl &&
-              (imageUrl.startsWith("/") || imageUrl.startsWith("http")) ? (
-              <Image
-                src={imageUrl}
-                alt="Uploaded image"
-                width={300}
-                height={300}
-                className="rounded-lg object-contain max-h-[300px]"
-                style={{ objectFit: "contain" }}
-              />
-            ) : imageUrl ? (
-              <img
-                src={`data:image/jpeg;base64,${imageUrl}`}
-                alt="Uploaded image"
-                className="rounded-lg object-contain max-h-[300px] max-w-full"
-              />
-            ) : null}
+        {isAI ? "AI" : "U"}
+      </div>
+      <div className="flex-1">
+        <div className="flex items-start space-x-2">
+          <div
+            className={`rounded-2xl px-4 py-3 max-w-3xl prose ${isAI ? "bg-white border border-gray-200 text-gray-800" : "bg-gray-100 text-gray-800"}`}
+          >
+            {/* Use imageData (base64) if available, otherwise fall back to imageUrl */}
+            {(imageData || imageUrl) && (
+              <div className="mb-3">
+                {imageData ? (
+                  <img
+                    src={imageData}
+                    alt="Uploaded image"
+                    className="rounded-lg object-contain max-h-[300px] max-w-full"
+                  />
+                ) : imageUrl &&
+                  (imageUrl.startsWith("/") || imageUrl.startsWith("http")) ? (
+                  <Image
+                    src={imageUrl}
+                    alt="Uploaded image"
+                    width={300}
+                    height={300}
+                    className="rounded-lg object-contain max-h-[300px]"
+                    style={{ objectFit: "contain" }}
+                  />
+                ) : imageUrl ? (
+                  <img
+                    src={`data:image/jpeg;base64,${imageUrl}`}
+                    alt="Uploaded image"
+                    className="rounded-lg object-contain max-h-[300px] max-w-full"
+                  />
+                ) : null}
+              </div>
+            )}
+            <Markdown remarkPlugins={[remarkGfm]}>{content || ""}</Markdown>
+            {isStreaming && (
+              <span className="inline-block w-2 h-4 ml-1 bg-gray-800 animate-pulse">
+                &#8203;
+              </span>
+            )}
           </div>
-        )}
-        <Markdown remarkPlugins={[remarkGfm]}>{content || ""}</Markdown>
-        {isStreaming && (
-          <span className="inline-block w-2 h-4 ml-1 bg-gray-800 animate-pulse">
-            &#8203;
-          </span>
+          {isAI && content && !isStreaming && (
+            <TextToSpeechButton
+              isSpeaking={isSpeaking}
+              onSpeak={speak}
+              onStopSpeaking={stopSpeaking}
+              text={content}
+            />
+          )}
+        </div>
+        {time && (
+          <span className="text-xs text-gray-500 mt-1 block">{time}</span>
         )}
       </div>
-      {time && <span className="text-xs text-gray-500 mt-1 block">{time}</span>}
     </div>
-  </div>
-);
+  );
+};
 
 const LoadingSkeleton = () => (
   <div className="flex items-start space-x-3 animate-pulse">
@@ -89,6 +110,10 @@ export default function ConversationPage() {
   const fileInputRef = useRef(null);
   const router = useRouter();
   const bottomRef = useRef(null);
+
+  // Add speech functionality
+  const { isListening, speechError, startListening, stopListening } =
+    useSpeech();
 
   useEffect(() => {
     if (!conversationId) return;
@@ -182,8 +207,9 @@ export default function ConversationPage() {
     }
   };
 
-  const handleSendStreaming = async () => {
-    if (!input.trim() && !selectedImage) return;
+  const handleSendStreaming = async (messageText = null) => {
+    const textToSend = messageText || input;
+    if (!textToSend.trim() && !selectedImage) return;
     setLoading(true);
     setIsStreaming(true);
     setError("");
@@ -192,8 +218,8 @@ export default function ConversationPage() {
     const optimisticUserMsg = {
       _id: Date.now().toString(),
       role: "user",
-      content: input,
-      imageData: imagePreview, // Use imageData instead of imageUrl for base64 data
+      content: textToSend,
+      imageData: imagePreview,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, optimisticUserMsg]);
@@ -221,7 +247,7 @@ export default function ConversationPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           conversationId,
-          message: input,
+          message: textToSend,
           imageUrl: imagePreview,
           imageData: imageData,
         }),
@@ -338,6 +364,14 @@ export default function ConversationPage() {
     }
   };
 
+  const handleVoiceInput = (transcript, autoSend = false) => {
+    setInput(transcript);
+    if (autoSend && transcript.trim()) {
+      // Pass the transcript directly to avoid state update delays
+      handleSendStreaming(transcript);
+    }
+  };
+
   if (notFound) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
@@ -391,7 +425,7 @@ export default function ConversationPage() {
             <input
               type="text"
               placeholder="Ask me Anything"
-              className="w-full p-4 pr-36 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+              className="w-full p-4 pr-44 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSendStreaming()}
@@ -418,6 +452,12 @@ export default function ConversationPage() {
                   </button>
                 </div>
               )}
+              <VoiceInputButton
+                isListening={isListening}
+                onStartListening={() => startListening(handleVoiceInput, true)}
+                onStopListening={stopListening}
+                disabled={loading}
+              />
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
@@ -464,6 +504,9 @@ export default function ConversationPage() {
             </div>
           </div>
           {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+          {speechError && (
+            <div className="text-red-500 text-sm mt-2">{speechError}</div>
+          )}
         </footer>
       </main>
     </div>

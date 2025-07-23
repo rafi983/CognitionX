@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { Zap, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSpeech } from "@/hooks/useSpeech";
+import { VoiceInputButton } from "@/components/SpeechControls";
 
 const SUGGESTIONS = [
   "Summarize this article for me.",
@@ -28,6 +30,9 @@ export default function WelcomePage() {
   const [models, setModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState("");
   const router = useRouter();
+
+  const { isListening, speechError, startListening, stopListening } =
+    useSpeech();
 
   useEffect(() => {
     fetch("/api/models")
@@ -91,6 +96,15 @@ export default function WelcomePage() {
     }
   };
 
+  const handleVoiceInput = (transcript, autoSend = false) => {
+    setInput(transcript);
+    if (autoSend && transcript.trim()) {
+      setTimeout(() => {
+        handleSend(transcript);
+      }, 100);
+    }
+  };
+
   return (
     <div className="flex h-screen mx-auto bg-white max-h-screen">
       <Sidebar />
@@ -134,7 +148,7 @@ export default function WelcomePage() {
             <input
               type="text"
               placeholder="Ask me Anything"
-              className="w-full p-4 pr-36 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+              className="w-full p-4 pr-44 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
@@ -142,6 +156,12 @@ export default function WelcomePage() {
               maxLength={1000}
             />
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+              <VoiceInputButton
+                isListening={isListening}
+                onStartListening={() => startListening(handleVoiceInput, true)}
+                onStopListening={stopListening}
+                disabled={loading}
+              />
               <select
                 className="p-1 pr-6 border border-gray-300 rounded-md text-gray-800 bg-white text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
                 value={selectedModel}
@@ -173,6 +193,9 @@ export default function WelcomePage() {
             </div>
           </div>
           {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+          {speechError && (
+            <div className="text-red-500 text-sm mt-2">{speechError}</div>
+          )}
         </div>
       </main>
     </div>
