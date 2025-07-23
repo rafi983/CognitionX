@@ -2,7 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
-import { ArrowRight, ImageIcon, X, Settings } from "lucide-react";
+import {
+  ArrowRight,
+  ImageIcon,
+  X,
+  Settings,
+  Copy,
+  RotateCcw,
+  Edit3,
+  Check,
+  X as XIcon,
+} from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { useSpeech } from "@/hooks/useSpeech";
@@ -16,11 +26,61 @@ import { PERSONAS } from "@/lib/personas";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const Message = ({ isAI, content, time, isStreaming, imageUrl, imageData }) => {
+const Message = ({
+  isAI,
+  content,
+  time,
+  isStreaming,
+  imageUrl,
+  imageData,
+  messageId,
+  onRegenerate,
+  onEdit,
+  isLastUserMessage,
+}) => {
   const { isSpeaking, speak, stopSpeaking } = useSpeech();
+  const [showActions, setShowActions] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(content);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+    }
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditContent(content);
+  };
+
+  const handleSaveEdit = () => {
+    if (editContent.trim() !== content) {
+      onEdit(messageId, editContent.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent(content);
+  };
+
+  const handleRegenerate = () => {
+    onRegenerate();
+  };
 
   return (
-    <div className="flex items-start space-x-3">
+    <div
+      className="flex items-start space-x-3 group relative"
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
+    >
       <div
         className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-sm font-semibold ${isAI ? "bg-gradient-to-r from-purple-500 to-pink-500" : "bg-blue-500"}`}
       >
@@ -31,7 +91,6 @@ const Message = ({ isAI, content, time, isStreaming, imageUrl, imageData }) => {
           <div
             className={`rounded-2xl px-4 py-3 max-w-3xl prose ${isAI ? "bg-white border border-gray-200 text-gray-800" : "bg-gray-100 text-gray-800"}`}
           >
-            {/* Use imageData (base64) if available, otherwise fall back to imageUrl */}
             {(imageData || imageUrl) && (
               <div className="mb-3">
                 {imageData ? (
@@ -59,11 +118,42 @@ const Message = ({ isAI, content, time, isStreaming, imageUrl, imageData }) => {
                 ) : null}
               </div>
             )}
-            <Markdown remarkPlugins={[remarkGfm]}>{content || ""}</Markdown>
-            {isStreaming && (
-              <span className="inline-block w-2 h-4 ml-1 bg-gray-800 animate-pulse">
-                &#8203;
-              </span>
+
+            {isEditing ? (
+              <div className="space-y-3">
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={Math.max(2, editContent.split("\n").length)}
+                  autoFocus
+                />
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleSaveEdit}
+                    className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                  >
+                    <Check size={14} />
+                    <span>Save</span>
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="flex items-center space-x-1 px-3 py-1 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                  >
+                    <XIcon size={14} />
+                    <span>Cancel</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Markdown remarkPlugins={[remarkGfm]}>{content || ""}</Markdown>
+                {isStreaming && (
+                  <span className="inline-block w-2 h-4 ml-1 bg-gray-800 animate-pulse">
+                    &#8203;
+                  </span>
+                )}
+              </>
             )}
           </div>
           {isAI && content && !isStreaming && (
@@ -75,6 +165,40 @@ const Message = ({ isAI, content, time, isStreaming, imageUrl, imageData }) => {
             />
           )}
         </div>
+
+        {/* Action Menu */}
+        {showActions && !isStreaming && !isEditing && (
+          <div className="absolute right-0 top-0 flex items-center space-x-1 bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-10">
+            <button
+              onClick={handleCopy}
+              className={`p-2 rounded-md transition-colors ${copySuccess ? "bg-green-100 text-green-600" : "hover:bg-gray-100 text-gray-600"}`}
+              title="Copy message"
+            >
+              <Copy size={14} />
+            </button>
+
+            {!isAI && (
+              <button
+                onClick={handleEdit}
+                className="p-2 rounded-md hover:bg-gray-100 text-gray-600 transition-colors"
+                title="Edit message"
+              >
+                <Edit3 size={14} />
+              </button>
+            )}
+
+            {isAI && isLastUserMessage && (
+              <button
+                onClick={handleRegenerate}
+                className="p-2 rounded-md hover:bg-gray-100 text-gray-600 transition-colors"
+                title="Regenerate response"
+              >
+                <RotateCcw size={14} />
+              </button>
+            )}
+          </div>
+        )}
+
         {time && (
           <span className="text-xs text-gray-500 mt-1 block">{time}</span>
         )}
@@ -454,6 +578,229 @@ export default function ConversationPage() {
     }
   };
 
+  // Handle message regeneration
+  const handleMessageRegenerate = async () => {
+    if (messages.length < 2) return;
+
+    // Find the last user message
+    const lastUserMessage = messages
+      .slice()
+      .reverse()
+      .find((msg) => msg.role === "user");
+    if (!lastUserMessage) return;
+
+    // Keep ALL existing messages - don't remove anything
+    // Just add a new AI response to the conversation
+    setLoading(true);
+    setIsStreaming(true);
+    setError("");
+
+    const placeholderAssistantMsg = {
+      _id: `regenerated-${Date.now()}`,
+      role: "assistant",
+      content: "",
+      createdAt: new Date().toISOString(),
+      isStreaming: true,
+    };
+    setMessages((prev) => [...prev, placeholderAssistantMsg]);
+
+    try {
+      const response = await fetch("/api/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId,
+          message: lastUserMessage.content,
+          imageUrl: lastUserMessage.imageData,
+          imageData: lastUserMessage.imageData,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to get streaming response");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let accumulatedContent = "";
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.substring(5).trim();
+
+            if (data === "[DONE]") {
+              setIsStreaming(false);
+              continue;
+            }
+
+            try {
+              const parsedData = JSON.parse(data);
+              if (parsedData.text) {
+                accumulatedContent += parsedData.text;
+
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg._id === placeholderAssistantMsg._id
+                      ? { ...msg, content: accumulatedContent }
+                      : msg,
+                  ),
+                );
+              }
+
+              if (parsedData.error) {
+                setError(`Streaming error: ${parsedData.error}`);
+                break;
+              }
+            } catch (e) {
+              console.error("Error parsing streaming data:", e);
+            }
+          }
+        }
+      }
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === placeholderAssistantMsg._id
+            ? { ...msg, isStreaming: false }
+            : msg,
+        ),
+      );
+    } catch (e) {
+      setError(`Regeneration error: ${e.message}`);
+      setMessages((prev) =>
+        prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
+      );
+    } finally {
+      setLoading(false);
+      setIsStreaming(false);
+    }
+  };
+
+  // Handle message editing
+  const handleMessageEdit = async (messageId, newContent) => {
+    const messageIndex = messages.findIndex((msg) => msg._id === messageId);
+    if (messageIndex === -1) return;
+
+    // Create new user message with edited content
+    const editedUserMsg = {
+      _id: `edited-${Date.now()}`,
+      role: "user",
+      content: newContent,
+      imageData: messages[messageIndex].imageData,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Keep all original messages and add the new edited message
+    setMessages((prev) => [...prev, editedUserMsg]);
+
+    // Generate new AI response based on the edited message
+    setLoading(true);
+    setIsStreaming(true);
+    setError("");
+
+    const placeholderAssistantMsg = {
+      _id: `streaming-${Date.now()}`,
+      role: "assistant",
+      content: "",
+      createdAt: new Date().toISOString(),
+      isStreaming: true,
+    };
+    setMessages((prev) => [...prev, placeholderAssistantMsg]);
+
+    try {
+      const response = await fetch("/api/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId,
+          message: newContent,
+          imageUrl: messages[messageIndex].imageData,
+          imageData: messages[messageIndex].imageData,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to get streaming response");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+      let accumulatedContent = "";
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.substring(5).trim();
+
+            if (data === "[DONE]") {
+              setIsStreaming(false);
+              continue;
+            }
+
+            try {
+              const parsedData = JSON.parse(data);
+              if (parsedData.text) {
+                accumulatedContent += parsedData.text;
+
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg._id === placeholderAssistantMsg._id
+                      ? { ...msg, content: accumulatedContent }
+                      : msg,
+                  ),
+                );
+              }
+
+              if (parsedData.error) {
+                setError(`Streaming error: ${parsedData.error}`);
+                break;
+              }
+            } catch (e) {
+              console.error("Error parsing streaming data:", e);
+            }
+          }
+        }
+      }
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === placeholderAssistantMsg._id
+            ? { ...msg, isStreaming: false }
+            : msg,
+        ),
+      );
+    } catch (e) {
+      setError(`Editing error: ${e.message}`);
+      setMessages((prev) =>
+        prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
+      );
+    } finally {
+      setLoading(false);
+      setIsStreaming(false);
+    }
+  };
+
   if (notFound) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
@@ -485,31 +832,44 @@ export default function ConversationPage() {
           </div>
         </header>
         <div className="flex-1 flex flex-col p-8 overflow-y-auto space-y-6">
-          {messages.map((msg) => (
-            <Message
-              key={msg._id}
-              isAI={msg.role === "assistant"}
-              content={msg.content}
-              imageUrl={
-                msg.imageUrl &&
-                (msg.imageUrl.startsWith("/") ||
-                  msg.imageUrl.startsWith("http"))
-                  ? msg.imageUrl
-                  : null
-              }
-              imageData={
-                msg.imageData ||
-                (msg.imageUrl && msg.imageUrl.startsWith("data:")
-                  ? msg.imageUrl
-                  : null)
-              }
-              isStreaming={msg.isStreaming}
-              time={new Date(msg.createdAt).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            />
-          ))}
+          {messages.map((msg, index) => {
+            // Determine if this AI message should show regenerate button
+            // It should show if it's the last AI message and there's a user message before it
+            const isLastAIMessage =
+              msg.role === "assistant" && index === messages.length - 1;
+            const hasPreviousUserMessage =
+              index > 0 && messages[index - 1].role === "user";
+
+            return (
+              <Message
+                key={msg._id}
+                isAI={msg.role === "assistant"}
+                content={msg.content}
+                imageUrl={
+                  msg.imageUrl &&
+                  (msg.imageUrl.startsWith("/") ||
+                    msg.imageUrl.startsWith("http"))
+                    ? msg.imageUrl
+                    : null
+                }
+                imageData={
+                  msg.imageData ||
+                  (msg.imageUrl && msg.imageUrl.startsWith("data:")
+                    ? msg.imageUrl
+                    : null)
+                }
+                isStreaming={msg.isStreaming}
+                time={new Date(msg.createdAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+                messageId={msg._id}
+                onRegenerate={handleMessageRegenerate}
+                onEdit={handleMessageEdit}
+                isLastUserMessage={isLastAIMessage && hasPreviousUserMessage}
+              />
+            );
+          })}
           {loading && !isStreaming && <LoadingSkeleton />}
           <div ref={bottomRef} />
         </div>

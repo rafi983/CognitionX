@@ -18,7 +18,7 @@ export async function POST(req) {
 
   try {
     const conversation = await Conversation.create({
-      title,
+      title: "Generating title...",
       model,
       systemPrompt: systemPrompt || "",
     });
@@ -59,8 +59,30 @@ export async function POST(req) {
     });
 
     try {
-      await generateTitle(conversation._id);
-    } catch (error) {}
+      const generatedTitle = await generateTitle(conversation._id);
+      if (generatedTitle) {
+        console.log(
+          `Successfully generated title: "${generatedTitle}" for conversation ${conversation._id}`,
+        );
+        const updatedConversation = await Conversation.findById(
+          conversation._id,
+        );
+        conversation.title = updatedConversation.title;
+      } else {
+        console.warn(
+          `Title generation returned null for conversation ${conversation._id}`,
+        );
+        conversation.title = message.slice(0, 40);
+        await conversation.save();
+      }
+    } catch (error) {
+      console.error(
+        `Title generation failed for conversation ${conversation._id}:`,
+        error,
+      );
+      conversation.title = message.slice(0, 40);
+      await conversation.save();
+    }
 
     return NextResponse.json({
       conversation,

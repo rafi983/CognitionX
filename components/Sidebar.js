@@ -10,11 +10,27 @@ export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
+  const fetchConversations = () => {
     fetch("/api/conversation")
       .then((res) => res.json())
-      .then(setConversations);
+      .then(setConversations)
+      .catch(console.error);
+  };
+
+  useEffect(() => {
+    // Initial fetch
+    fetchConversations();
+
+    // Set up polling to check for title updates every 5 seconds
+    const interval = setInterval(fetchConversations, 5000);
+
+    return () => clearInterval(interval);
   }, []);
+
+  // Refresh conversations when pathname changes (new conversation created)
+  useEffect(() => {
+    fetchConversations();
+  }, [pathname]);
 
   const handleEdit = (id, title) => {
     setEditingId(id);
