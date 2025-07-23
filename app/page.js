@@ -8,11 +8,27 @@ import { useSpeech } from "@/hooks/useSpeech";
 import { VoiceInputButton } from "@/components/SpeechControls";
 import { PersonaSelector } from "@/components/PersonaSelector";
 import { PERSONAS } from "@/lib/personas";
+import {
+  isMagicCommand,
+  parseMagicCommand,
+  executeMagicCommand,
+  getMagicCommandSuggestions,
+} from "@/lib/magicCommands";
 
 const SUGGESTIONS = [
   "Summarize this article for me.",
   "Help me write a professional email.",
   "Generate a list of creative marketing ideas.",
+  "/help - Show all available magic commands",
+  "/brainstorm marketing ideas for a coffee shop",
+];
+
+const MAGIC_COMMAND_EXAMPLES = [
+  { command: "/help", description: "Show all available magic commands" },
+  { command: "/brainstorm", description: "Generate creative ideas" },
+  { command: "/summarize", description: "Summarize conversation" },
+  { command: "/history", description: "Show conversation overview" },
+  { command: "/explain", description: "Explain last AI response" },
 ];
 
 const LoadingSkeleton = () => (
@@ -104,6 +120,77 @@ export default function WelcomePage() {
     }
   };
 
+  // Magic commands state
+  const [showCommandSuggestions, setShowCommandSuggestions] = useState(false);
+  const [commandSuggestions, setCommandSuggestions] = useState([]);
+
+  const handleInputChange = (value) => {
+    setInput(value);
+
+    // Check if input is a magic command
+    if (isMagicCommand(value)) {
+      const query = value.slice(1).toLowerCase();
+      const suggestions = getMagicCommandSuggestions(query);
+      setCommandSuggestions(suggestions);
+      setShowCommandSuggestions(suggestions.length > 0);
+    } else {
+      setShowCommandSuggestions(false);
+      setCommandSuggestions([]);
+    }
+  };
+
+  const handleMagicCommand = async (commandInput) => {
+    const { command, args, isValid } = parseMagicCommand(commandInput);
+
+    if (!isValid) {
+      setError(
+        `Unknown command: ${command}. Type /help to see available commands.`,
+      );
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await executeMagicCommand(
+        command,
+        args,
+        [], // No conversation history on home page
+        null, // No conversation ID
+        selectedModel,
+      );
+
+      if (result.success) {
+        // For home page, create a new conversation with the magic command result
+        const res = await fetch("/api/conversation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: commandInput.slice(0, 40),
+            message: commandInput,
+            model: selectedModel,
+            systemPrompt: getSystemPrompt(),
+            magicCommandResult: result.result,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to create conversation");
+        }
+
+        const data = await res.json();
+        router.push(`/conversation/${data.conversation._id}`);
+      } else {
+        setError(result.error);
+      }
+    } catch (error) {
+      setError(`Command failed: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSend = async (prompt) => {
     if (!prompt && !imagePreview) return;
     if (!selectedModel) return;
@@ -149,6 +236,24 @@ export default function WelcomePage() {
     }
   };
 
+  const handleSubmit = async (inputText = null) => {
+    const textToSend = inputText || input;
+    if (!textToSend.trim() && !imagePreview) return;
+
+    // Check if input is a magic command
+    if (isMagicCommand(textToSend)) {
+      await handleMagicCommand(textToSend);
+    } else {
+      await handleSend(textToSend);
+    }
+  };
+
+  const selectCommandSuggestion = (suggestion) => {
+    setInput(suggestion.command);
+    setShowCommandSuggestions(false);
+    setCommandSuggestions([]);
+  };
+
   return (
     <div className="flex h-screen mx-auto bg-white max-h-screen">
       <Sidebar />
@@ -190,14 +295,44 @@ export default function WelcomePage() {
           <div className="relative">
             <input
               type="text"
-              placeholder="Ask me Anything"
+              placeholder="Ask me Anything or try /help for magic commands"
               className="w-full p-4 pr-64 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               disabled={loading}
               maxLength={1000}
             />
+            {/* Magic Commands Dropdown - positioned above input */}
+            {showCommandSuggestions && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+                {commandSuggestions.length === 0 ? (
+                  <div className="p-2 text-gray-500 text-sm">
+                    No command suggestions
+                  </div>
+                ) : (
+                  commandSuggestions.map((suggestion) => (
+                    <div
+                      key={suggestion.command}
+                      className="p-3 cursor-pointer hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-b-0"
+                      onClick={() => selectCommandSuggestion(suggestion)}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg">{suggestion.icon}</span>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-800">
+                            {suggestion.command}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {suggestion.description}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
               {imagePreview && (
                 <div className="relative mr-2">
@@ -266,7 +401,7 @@ export default function WelcomePage() {
               <span className="text-sm text-gray-500">{input.length}/1000</span>
               <button
                 className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-                onClick={() => handleSend(input)}
+                onClick={() => handleSubmit()}
                 disabled={loading || (!input.trim() && !imagePreview)}
               >
                 <span className="text-sm">

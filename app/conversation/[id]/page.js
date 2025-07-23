@@ -12,6 +12,7 @@ import {
   Edit3,
   Check,
   X as XIcon,
+  Zap,
 } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
@@ -22,6 +23,13 @@ import {
 } from "@/components/SpeechControls";
 import { PersonaSelector } from "@/components/PersonaSelector";
 import { PERSONAS } from "@/lib/personas";
+import {
+  isMagicCommand,
+  parseMagicCommand,
+  executeMagicCommand,
+  getMagicCommandSuggestions,
+  MAGIC_COMMANDS,
+} from "@/lib/magicCommands";
 
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -801,6 +809,167 @@ export default function ConversationPage() {
     }
   };
 
+  // Command handling
+  const handleCommand = async (command) => {
+    // Parse and execute the command
+    const parsedCommand = parseMagicCommand(command);
+    if (!parsedCommand) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      // Execute the command and get the response
+      const response = await executeMagicCommand(parsedCommand, conversationId);
+
+      // Handle the response (e.g., update the conversation, show a message, etc.)
+      if (response?.message) {
+        setMessages((prev) => [...prev, response.message]);
+      }
+
+      if (response?.error) {
+        setError(response.error);
+      }
+    } catch (e) {
+      setError(`Command error: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Autocomplete handling
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState([]);
+  const [showingAutocomplete, setShowingAutocomplete] = useState(false);
+
+  const [showCommandSuggestions, setShowCommandSuggestions] = useState(false);
+  const [commandSuggestions, setCommandSuggestions] = useState([]);
+
+  const handleInputChange = (value) => {
+    setInput(value);
+
+    // Check if input is a magic command
+    if (isMagicCommand(value)) {
+      const query = value.slice(1).toLowerCase();
+      const suggestions = getMagicCommandSuggestions(query);
+      setCommandSuggestions(suggestions);
+      setShowCommandSuggestions(true);
+    } else {
+      setShowCommandSuggestions(false);
+      setCommandSuggestions([]);
+    }
+  };
+
+  const handleMagicCommand = async (commandInput) => {
+    const { command, args, isValid } = parseMagicCommand(commandInput);
+
+    if (!isValid) {
+      setError(
+        `Unknown command: ${command}. Type /help to see available commands.`,
+      );
+      return;
+    }
+
+    setLoading(true);
+    setIsStreaming(true);
+    setError("");
+
+    // Add user message for the command
+    const commandMsg = {
+      _id: Date.now().toString(),
+      role: "user",
+      content: commandInput,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, commandMsg]);
+
+    // Create streaming placeholder for magic command response
+    const placeholderAssistantMsg = {
+      _id: `magic-streaming-${Date.now()}`,
+      role: "assistant",
+      content: "",
+      createdAt: new Date().toISOString(),
+      isStreaming: true,
+    };
+    setMessages((prev) => [...prev, placeholderAssistantMsg]);
+    setInput("");
+    setShowCommandSuggestions(false);
+
+    try {
+      // Get the magic command result
+      const result = await executeMagicCommand(
+        command,
+        args,
+        messages,
+        conversationId,
+        selectedModel,
+      );
+
+      if (result.success) {
+        // Simulate streaming by displaying the result gradually
+        const fullContent = result.result;
+        const words = fullContent.split(" ");
+        let currentContent = "";
+
+        // Stream the content word by word for a better UX
+        for (let i = 0; i < words.length; i++) {
+          currentContent += (i > 0 ? " " : "") + words[i];
+
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg._id === placeholderAssistantMsg._id
+                ? { ...msg, content: currentContent }
+                : msg,
+            ),
+          );
+
+          // Add a small delay to simulate streaming
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+
+        // Mark streaming as complete
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === placeholderAssistantMsg._id
+              ? { ...msg, isStreaming: false }
+              : msg,
+          ),
+        );
+      } else {
+        setError(result.error);
+        // Remove the placeholder message on error
+        setMessages((prev) =>
+          prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
+        );
+      }
+    } catch (error) {
+      setError(`Command failed: ${error.message}`);
+      // Remove the placeholder message on error
+      setMessages((prev) =>
+        prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
+      );
+    } finally {
+      setLoading(false);
+      setIsStreaming(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!input.trim() && !imagePreview) return;
+
+    // Check if input is a magic command
+    if (isMagicCommand(input)) {
+      await handleMagicCommand(input);
+    } else {
+      await handleSendStreaming();
+    }
+  };
+
+  const selectCommandSuggestion = (suggestion) => {
+    setInput(suggestion.command);
+    setShowCommandSuggestions(false);
+    setCommandSuggestions([]);
+  };
+
   if (notFound) {
     return (
       <div className="flex h-screen items-center justify-center bg-white">
@@ -880,11 +1049,63 @@ export default function ConversationPage() {
               placeholder="Ask me Anything"
               className="w-full p-4 pr-64 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendStreaming()}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSubmit();
+                }
+              }}
               disabled={loading}
               maxLength={1000}
             />
+            {showingAutocomplete && (
+              <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1">
+                {autocompleteSuggestions.length === 0 ? (
+                  <div className="p-2 text-gray-500 text-sm">
+                    No suggestions found
+                  </div>
+                ) : (
+                  autocompleteSuggestions.map((suggestion) => (
+                    <div
+                      key={suggestion}
+                      className="p-2 cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSuggestionSelect(suggestion)}
+                    >
+                      {suggestion}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+            {showCommandSuggestions && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+                {commandSuggestions.length === 0 ? (
+                  <div className="p-2 text-gray-500 text-sm">
+                    No command suggestions
+                  </div>
+                ) : (
+                  commandSuggestions.map((suggestion) => (
+                    <div
+                      key={suggestion.command}
+                      className="p-3 cursor-pointer hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-b-0"
+                      onClick={() => selectCommandSuggestion(suggestion)}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg">{suggestion.icon}</span>
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-800">
+                            {suggestion.command}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {suggestion.description}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
               {imagePreview && (
                 <div className="relative mr-2">
@@ -953,7 +1174,7 @@ export default function ConversationPage() {
               <span className="text-sm text-gray-500">{input.length}/1000</span>
               <button
                 className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-                onClick={handleSendStreaming}
+                onClick={handleSubmit}
                 disabled={loading || (!input.trim() && !imagePreview)}
               >
                 <span className="text-sm">

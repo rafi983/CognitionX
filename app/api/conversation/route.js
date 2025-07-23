@@ -7,7 +7,8 @@ import { generateTitle } from "@/lib/titleGenerator";
 
 export async function POST(req) {
   await connectToDatabase();
-  const { title, message, model, systemPrompt, imageUrl } = await req.json();
+  const { title, message, model, systemPrompt, imageUrl, magicCommandResult } =
+    await req.json();
 
   if (!title || !message || !model) {
     return NextResponse.json(
@@ -30,26 +31,33 @@ export async function POST(req) {
       imageUrl: imageUrl || undefined,
     });
 
-    const geminiMessages = [
-      {
-        role: "user",
-        content: message,
-        ...(imageUrl && { imageData: imageUrl }),
-      },
-    ];
-
     let assistantContent = "";
-    try {
-      assistantContent = await getGeminiResponse(
-        geminiMessages,
-        model,
-        systemPrompt,
-      );
-    } catch (e) {
-      return NextResponse.json(
-        { error: `Gemini API error: ${e.message}` },
-        { status: 500 },
-      );
+
+    // If this is a magic command result, use it directly
+    if (magicCommandResult) {
+      assistantContent = magicCommandResult;
+    } else {
+      // Otherwise, get response from Gemini
+      const geminiMessages = [
+        {
+          role: "user",
+          content: message,
+          ...(imageUrl && { imageData: imageUrl }),
+        },
+      ];
+
+      try {
+        assistantContent = await getGeminiResponse(
+          geminiMessages,
+          model,
+          systemPrompt,
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { error: `Gemini API error: ${e.message}` },
+          { status: 500 },
+        );
+      }
     }
 
     const assistantMsg = await Message.create({
@@ -64,10 +72,9 @@ export async function POST(req) {
         console.log(
           `Successfully generated title: "${generatedTitle}" for conversation ${conversation._id}`,
         );
-        const updatedConversation = await Conversation.findById(
-          conversation._id,
-        );
-        conversation.title = updatedConversation.title;
+        // Update the conversation title directly
+        conversation.title = generatedTitle;
+        await conversation.save();
       } else {
         console.warn(
           `Title generation returned null for conversation ${conversation._id}`,
