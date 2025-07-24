@@ -8,6 +8,7 @@ import {
   LogOut,
   BarChart3,
   GitCompare,
+  Code,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { ExportButton } from "./ExportButton";
@@ -115,6 +116,13 @@ export function Sidebar() {
           >
             <GitCompare className="w-4 h-4" />
             <span className="text-sm">Compare Models</span>
+          </Link>
+          <Link
+            href="/playground"
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-900 transition-colors"
+          >
+            <Code className="w-4 h-4" />
+            <span className="text-sm">API Playground</span>
           </Link>
           <Link
             href="/analytics"
