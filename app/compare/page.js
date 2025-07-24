@@ -12,21 +12,31 @@ export default function ComparePage() {
   const [selectedModels, setSelectedModels] = useState([]);
   const [prompt, setPrompt] = useState("");
   const [comparisons, setComparisons] = useState([]);
+  const [votes, setVotes] = useState({}); // Add votes state
   const [isComparing, setIsComparing] = useState(false);
   const [error, setError] = useState("");
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const router = useRouter();
+
+  // Helper function to get user-specific localStorage key
+  const getStorageKey = () => {
+    return user?.id ? `aiComparison_${user.id}` : "aiComparison_guest";
+  };
 
   // Load saved state from localStorage on component mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedState = localStorage.getItem("aiComparison");
+    if (typeof window !== "undefined" && user) {
+      const savedState = localStorage.getItem(getStorageKey());
 
       if (savedState) {
         try {
-          const { savedPrompt, savedComparisons, savedSelectedModels } =
-            JSON.parse(savedState);
+          const {
+            savedPrompt,
+            savedComparisons,
+            savedSelectedModels,
+            savedVotes,
+          } = JSON.parse(savedState);
 
           if (savedPrompt) {
             setPrompt(savedPrompt);
@@ -37,6 +47,9 @@ export default function ComparePage() {
           if (savedSelectedModels && savedSelectedModels.length > 0) {
             setSelectedModels(savedSelectedModels);
           }
+          if (savedVotes) {
+            setVotes(savedVotes);
+          }
         } catch (err) {
           console.error("Failed to load saved comparison state:", err);
         }
@@ -44,11 +57,11 @@ export default function ComparePage() {
 
       setHasLoadedFromStorage(true);
     }
-  }, []);
+  }, [user]); // Add user as dependency
 
   // Save state to localStorage whenever key data changes (but only after initial load)
   useEffect(() => {
-    if (!hasLoadedFromStorage) {
+    if (!hasLoadedFromStorage || !user) {
       return;
     }
 
@@ -57,12 +70,14 @@ export default function ComparePage() {
         savedPrompt: prompt,
         savedComparisons: comparisons,
         savedSelectedModels: selectedModels,
+        savedVotes: votes, // Include votes in save
         timestamp: new Date().toISOString(),
+        userId: user.id, // Include user ID for verification
       };
 
-      localStorage.setItem("aiComparison", JSON.stringify(stateToSave));
+      localStorage.setItem(getStorageKey(), JSON.stringify(stateToSave));
     }
-  }, [prompt, comparisons, selectedModels, hasLoadedFromStorage]);
+  }, [prompt, comparisons, selectedModels, votes, hasLoadedFromStorage, user]); // Add votes to dependency array
 
   useEffect(() => {
     if (authLoading) return;
@@ -83,7 +98,7 @@ export default function ComparePage() {
       setModels(data.models || []);
 
       // Only auto-select first 2 models if no saved models exist
-      const savedState = localStorage.getItem("aiComparison");
+      const savedState = localStorage.getItem(getStorageKey());
       let hasSavedModels = false;
 
       if (savedState) {
@@ -163,6 +178,14 @@ export default function ComparePage() {
     } catch (err) {
       console.error("Failed to save comparison:", err);
     }
+  };
+
+  // Handle vote changes from ModelComparisonInterface
+  const handleVoteChange = (model, voteType) => {
+    setVotes((prev) => ({
+      ...prev,
+      [model]: voteType,
+    }));
   };
 
   if (authLoading) {
@@ -309,6 +332,8 @@ export default function ComparePage() {
               comparisons={comparisons}
               onSave={saveComparison}
               prompt={prompt}
+              votes={votes} // Add the votes prop
+              onVoteChange={handleVoteChange} // Pass down the vote handler
             />
           )}
         </div>

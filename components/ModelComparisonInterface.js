@@ -12,8 +12,13 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CodeBlock } from "@/components/CodeBlock";
 
-export function ModelComparisonInterface({ comparisons, onSave, prompt }) {
-  const [votes, setVotes] = useState({});
+export function ModelComparisonInterface({
+  comparisons,
+  onSave,
+  prompt,
+  votes = {},
+  onVoteChange,
+}) {
   const [metrics, setMetrics] = useState({});
   const [savedComparison, setSavedComparison] = useState(false);
 
@@ -32,13 +37,6 @@ export function ModelComparisonInterface({ comparisons, onSave, prompt }) {
     });
     setMetrics(calculatedMetrics);
   }, [comparisons]);
-
-  const handleVote = (model, voteType) => {
-    setVotes((prev) => ({
-      ...prev,
-      [model]: voteType,
-    }));
-  };
 
   const copyResponse = async (response) => {
     try {
@@ -93,6 +91,11 @@ export function ModelComparisonInterface({ comparisons, onSave, prompt }) {
       return Math.min(...values);
     }
     return Math.max(...values);
+  };
+
+  const handleVote = (model, voteType) => {
+    // Use the parent's vote handler instead of local state
+    onVoteChange(model, voteType);
   };
 
   return (
