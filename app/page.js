@@ -24,14 +24,6 @@ const SUGGESTIONS = [
   "/brainstorm marketing ideas for a coffee shop",
 ];
 
-const MAGIC_COMMAND_EXAMPLES = [
-  { command: "/help", description: "Show all available magic commands" },
-  { command: "/brainstorm", description: "Generate creative ideas" },
-  { command: "/summarize", description: "Summarize conversation" },
-  { command: "/history", description: "Show conversation overview" },
-  { command: "/explain", description: "Explain last AI response" },
-];
-
 const LoadingSkeleton = () => (
   <div className="flex items-center space-x-3 animate-pulse mt-8 w-full max-w-2xl">
     <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-300 to-pink-300 flex-shrink-0" />
@@ -253,8 +245,7 @@ export default function WelcomePage() {
     }
   };
 
-  const handleInputFocus = () => {
-  };
+  const handleInputFocus = () => {};
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -275,48 +266,48 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="flex h-screen mx-auto bg-white max-h-screen">
+    <div className="flex h-screen mx-auto bg-white dark:bg-gray-900 max-h-screen">
       <Sidebar />
-      <main className="flex-1 flex flex-col bg-white">
+      <main className="flex-1 flex flex-col bg-white dark:bg-gray-900">
         <div className="flex-1 flex flex-col items-center justify-center px-8 pt-20 pb-8 overflow-y-auto">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 mb-8 flex items-center justify-center flex-shrink-0">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-300 via-pink-300 to-blue-300 opacity-80" />
           </div>
 
-          <h1 className="text-4xl font-semibold text-gray-800 mb-2">
+          <h1 className="text-4xl font-semibold text-gray-800 dark:text-white mb-2">
             Hi there
           </h1>
-          <h2 className="text-3xl font-semibold text-gray-800 mb-6">
+          <h2 className="text-3xl font-semibold text-gray-800 dark:text-white mb-6">
             How can I help you today?
           </h2>
 
-          <p className="text-gray-600 text-center max-w-md mb-8 leading-relaxed">
-            Choose a persona to customize the AI's behavior, then start your
-            conversation.
+          <p className="text-gray-600 dark:text-gray-300 text-center max-w-md mb-8 leading-relaxed">
+            Choose a persona to customize the AI&apos;s behavior, then start
+            your conversation.
           </p>
 
           <div className="space-y-3 w-full max-w-2xl">
             {SUGGESTIONS.map((s, i) => (
               <button
                 key={i}
-                className="w-full flex items-center space-x-3 p-4 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all text-left"
+                className="w-full flex items-center space-x-3 p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all text-left bg-white dark:bg-gray-800"
                 onClick={() => handleSend(s)}
                 disabled={loading}
               >
                 <Zap className="w-5 h-5 text-yellow-500 flex-shrink-0" />
-                <span className="text-gray-700">{s}</span>
+                <span className="text-gray-700 dark:text-gray-300">{s}</span>
               </button>
             ))}
             {loading && <LoadingSkeleton />}
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-200">
+        <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <div className="relative">
             <input
               type="text"
               placeholder="Ask me Anything or try /help for magic commands"
-              className="w-full p-4 pr-64 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+              className="w-full p-4 pr-64 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800 dark:text-white bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400"
               value={input}
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -325,25 +316,25 @@ export default function WelcomePage() {
               maxLength={1000}
             />
             {showCommandSuggestions && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
                 {commandSuggestions.length === 0 ? (
-                  <div className="p-2 text-gray-500 text-sm">
+                  <div className="p-2 text-gray-500 dark:text-gray-400 text-sm">
                     No command suggestions
                   </div>
                 ) : (
                   commandSuggestions.map((suggestion) => (
                     <div
                       key={suggestion.command}
-                      className="p-3 cursor-pointer hover:bg-gray-100 transition-colors border-b border-gray-100 last:border-b-0"
+                      className="p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-600 last:border-b-0"
                       onClick={() => selectCommandSuggestion(suggestion)}
                     >
                       <div className="flex items-center space-x-2">
                         <span className="text-lg">{suggestion.icon}</span>
                         <div className="flex-1">
-                          <div className="font-medium text-gray-800">
+                          <div className="font-medium text-gray-800 dark:text-white">
                             {suggestion.command}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
                             {suggestion.description}
                           </div>
                         </div>
@@ -402,7 +393,7 @@ export default function WelcomePage() {
                 disabled={loading}
               />
               <select
-                className="p-1 pr-6 border border-gray-300 rounded-md text-gray-800 bg-white text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
+                className="p-1 pr-6 border border-gray-300 dark:border-gray-600 rounded-md text-gray-800 dark:text-white bg-white dark:bg-gray-700 text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
                 disabled={models.length === 0}
@@ -418,9 +409,11 @@ export default function WelcomePage() {
           </div>
           <div className="flex items-end justify-end mt-3">
             <div className="flex items-end space-x-4">
-              <span className="text-sm text-gray-500">{input.length}/1000</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {input.length}/1000
+              </span>
               <button
-                className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                className="bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-black px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
                 onClick={() => handleSubmit()}
                 disabled={loading || (!input.trim() && !imagePreview)}
               >

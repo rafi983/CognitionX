@@ -12,6 +12,7 @@ import {
 import { useRouter, usePathname } from "next/navigation";
 import { ExportButton } from "./ExportButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Sidebar() {
   const [conversations, setConversations] = useState([]);
@@ -88,40 +89,43 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-gray-900 text-white flex-col hidden md:flex">
-      <div className="p-4 border-b border-gray-700">
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-white rounded-full"></div>
-          <div className="w-2 h-2 bg-white rounded-full"></div>
-          <span className="font-semibold text-sm">CognitionX</span>
+    <aside className="w-64 bg-gray-900 dark:bg-gray-950 text-white flex-col hidden md:flex">
+      <div className="p-4 border-b border-gray-700 dark:border-gray-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-white rounded-full"></div>
+            <div className="w-2 h-2 bg-white rounded-full"></div>
+            <span className="font-semibold text-sm">CognitionX</span>
+          </div>
+          <ThemeToggle />
         </div>
       </div>
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         <div className="space-y-1">
           <Link
             href="/"
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-900 transition-colors"
           >
             <MessageCircle className="w-4 h-4" />
             <span className="text-sm">Create Chat</span>
           </Link>
           <Link
             href="/compare"
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-900 transition-colors"
           >
             <GitCompare className="w-4 h-4" />
             <span className="text-sm">Compare Models</span>
           </Link>
           <Link
             href="/analytics"
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-900 transition-colors"
           >
             <BarChart3 className="w-4 h-4" />
             <span className="text-sm">Analytics</span>
           </Link>
         </div>
         <div className="pt-4">
-          <span className="text-gray-500 text-xs uppercase font-semibold">
+          <span className="text-gray-500 dark:text-gray-400 text-xs uppercase font-semibold">
             Conversations
           </span>
           <div className="space-y-1 mt-3">
@@ -130,7 +134,7 @@ export function Sidebar() {
                 {editingId === convo._id ? (
                   <>
                     <input
-                      className="bg-gray-800 text-white rounded px-2 py-1 text-sm w-32"
+                      className="bg-gray-800 dark:bg-gray-900 text-white rounded px-2 py-1 text-sm w-32"
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                       onBlur={() => handleEditSave(convo._id)}
@@ -143,15 +147,15 @@ export function Sidebar() {
                 ) : (
                   <Link
                     href={`/conversation/${convo._id}`}
-                    className="flex-1 flex items-center space-x-3 px-2 py-2 rounded-lg transition-colors text-sm hover:bg-gray-800"
+                    className="flex-1 flex items-center space-x-3 px-2 py-2 rounded-lg transition-colors text-sm hover:bg-gray-800 dark:hover:bg-gray-900"
                   >
-                    <span className="text-zinc-300 truncate max-w-[120px]">
+                    <span className="text-zinc-300 dark:text-zinc-400 truncate max-w-[120px]">
                       {convo.title}
                     </span>
                   </Link>
                 )}
                 <button
-                  className="ml-1 p-1 hover:bg-gray-700 rounded hidden group-hover:block"
+                  className="ml-1 p-1 hover:bg-gray-700 dark:hover:bg-gray-800 rounded hidden group-hover:block"
                   onClick={() => handleEdit(convo._id, convo.title)}
                   title="Edit"
                 >
@@ -161,7 +165,7 @@ export function Sidebar() {
                   <ExportButton conversationId={convo._id} />
                 </div>
                 <button
-                  className="ml-1 p-1 hover:bg-gray-700 rounded hidden group-hover:block"
+                  className="ml-1 p-1 hover:bg-gray-700 dark:hover:bg-gray-800 rounded hidden group-hover:block"
                   onClick={() => handleDelete(convo._id)}
                   title="Delete"
                 >
@@ -175,7 +179,7 @@ export function Sidebar() {
 
       {/* User Profile Section */}
       {user && (
-        <div className="p-4 border-t border-gray-700">
+        <div className="p-4 border-t border-gray-700 dark:border-gray-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
@@ -190,7 +194,7 @@ export function Sidebar() {
             </div>
             <button
               onClick={logout}
-              className="p-1 hover:bg-gray-700 rounded transition-colors"
+              className="p-1 hover:bg-gray-700 dark:hover:bg-gray-800 rounded transition-colors"
               title="Logout"
             >
               <LogOut className="w-4 h-4 text-gray-400" />
@@ -199,7 +203,7 @@ export function Sidebar() {
         </div>
       )}
 
-      <div className="p-4 border-t border-gray-700 mt-auto">
+      <div className="p-4 border-t border-gray-700 dark:border-gray-800 mt-auto">
         <div className="text-center space-y-2">
           <span className="text-xs text-gray-400">Powered by</span>
           <div className="flex items-center justify-center space-x-2">

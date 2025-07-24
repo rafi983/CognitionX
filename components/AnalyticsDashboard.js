@@ -17,12 +17,12 @@ export function AnalyticsDashboard({
 }) {
   if (!analytics) {
     return (
-      <div className="p-6 animate-pulse bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="p-6 animate-pulse bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-white h-24 rounded-xl shadow-sm border"
+              className="bg-white dark:bg-gray-800 h-24 rounded-xl shadow-sm border dark:border-gray-700"
             ></div>
           ))}
         </div>
@@ -42,7 +42,7 @@ export function AnalyticsDashboard({
   } = analytics;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
@@ -50,14 +50,14 @@ export function AnalyticsDashboard({
             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               Usage Analytics
             </h1>
-            <p className="text-gray-700 mt-2 text-lg">
+            <p className="text-gray-700 dark:text-gray-300 mt-2 text-lg">
               Track your AI conversation patterns and insights
             </p>
           </div>
           <select
             value={timeRange}
             onChange={(e) => onTimeRangeChange(e.target.value)}
-            className="px-6 py-3 border-2 border-purple-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm text-gray-800 font-medium"
+            className="px-6 py-3 border-2 border-purple-200 dark:border-purple-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 shadow-sm text-gray-800 dark:text-white font-medium"
           >
             <option value="7">Last 7 days</option>
             <option value="30">Last 30 days</option>
@@ -160,12 +160,12 @@ export function AnalyticsDashboard({
               {magicCommandsUsage.map(({ command, count }) => (
                 <div
                   key={command}
-                  className="flex justify-between items-center p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200"
+                  className="flex justify-between items-center p-3 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 rounded-lg border border-yellow-200 dark:border-yellow-800"
                 >
                   <span className="font-mono text-sm bg-gradient-to-r from-yellow-600 to-orange-600 text-white px-3 py-1 rounded-full font-medium">
                     {command}
                   </span>
-                  <span className="text-gray-800 font-semibold">
+                  <span className="text-gray-800 dark:text-white font-semibold">
                     {count} times
                   </span>
                 </div>
@@ -181,27 +181,27 @@ export function AnalyticsDashboard({
           gradient="from-cyan-500 to-blue-500"
         >
           <div className="grid grid-cols-3 gap-6 text-center">
-            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-              <div className="text-3xl font-bold text-blue-600 mb-1">
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-xl border border-blue-200 dark:border-blue-800">
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">
                 {messageTypes.user}
               </div>
-              <div className="text-sm text-gray-700 font-medium">
+              <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                 Your Messages
               </div>
             </div>
-            <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
-              <div className="text-3xl font-bold text-purple-600 mb-1">
+            <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-xl border border-purple-200 dark:border-purple-800">
+              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-1">
                 {messageTypes.assistant}
               </div>
-              <div className="text-sm text-gray-700 font-medium">
+              <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                 AI Responses
               </div>
             </div>
-            <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200">
-              <div className="text-3xl font-bold text-gray-700 mb-1">
+            <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-xl border border-gray-200 dark:border-gray-600">
+              <div className="text-3xl font-bold text-gray-700 dark:text-gray-300 mb-1">
                 {messageTypes.total}
               </div>
-              <div className="text-sm text-gray-700 font-medium">
+              <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                 Total Messages
               </div>
             </div>
@@ -223,32 +223,40 @@ function StatCard({
 }) {
   return (
     <div
-      className={`bg-gradient-to-br ${bgGradient} p-6 rounded-xl border-2 ${borderColor} shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1`}
+      className={`bg-gradient-to-br ${bgGradient} dark:from-gray-800 dark:to-gray-700 p-6 rounded-xl border-2 ${borderColor} dark:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1`}
     >
       <div
         className={`inline-flex p-3 rounded-xl bg-gradient-to-r ${gradient} text-white mb-4 shadow-md`}
       >
         {icon}
       </div>
-      <div className="text-3xl font-bold text-gray-800 mb-2">
+      <div className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
         {typeof value === "number" ? value.toLocaleString() : value}
       </div>
-      <div className="text-sm text-gray-700 font-medium">{title}</div>
-      {subtitle && <div className="text-xs text-gray-600 mt-1">{subtitle}</div>}
+      <div className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+        {title}
+      </div>
+      {subtitle && (
+        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+          {subtitle}
+        </div>
+      )}
     </div>
   );
 }
 
 function ChartCard({ title, icon, children, gradient }) {
   return (
-    <div className="bg-white p-6 rounded-xl border-2 border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border-2 border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300">
       <div className="flex items-center space-x-3 mb-6">
         <div
           className={`p-2 rounded-lg bg-gradient-to-r ${gradient} text-white shadow-md`}
         >
           {icon}
         </div>
-        <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+        <h3 className="text-xl font-bold text-gray-800 dark:text-white">
+          {title}
+        </h3>
       </div>
       {children}
     </div>
@@ -258,7 +266,7 @@ function ChartCard({ title, icon, children, gradient }) {
 function DailyActivityChart({ data }) {
   if (!data || data.length === 0) {
     return (
-      <div className="text-gray-600 text-center py-8 bg-gray-50 rounded-lg">
+      <div className="text-gray-600 dark:text-gray-400 text-center py-8 bg-gray-50 dark:bg-gray-700 rounded-lg">
         No activity data available
       </div>
     );
@@ -271,7 +279,7 @@ function DailyActivityChart({ data }) {
     <div className="space-y-4">
       {data.slice(-7).map((day, index) => (
         <div key={day.date} className="flex items-center space-x-4">
-          <div className="w-20 text-sm text-gray-700 font-medium">
+          <div className="w-20 text-sm text-gray-700 dark:text-gray-300 font-medium">
             {new Date(day.date).toLocaleDateString("en-US", {
               weekday: "short",
               month: "short",
@@ -281,10 +289,14 @@ function DailyActivityChart({ data }) {
           <div className="flex-1 flex space-x-4">
             <div className="flex-1">
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-700 font-medium">Messages</span>
-                <span className="text-blue-600 font-bold">{day.messages}</span>
+                <span className="text-gray-700 dark:text-gray-300 font-medium">
+                  Messages
+                </span>
+                <span className="text-blue-600 dark:text-blue-400 font-bold">
+                  {day.messages}
+                </span>
               </div>
-              <div className="bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div className="bg-gray-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-blue-500 to-cyan-500 h-3 rounded-full transition-all duration-500 shadow-sm"
                   style={{
@@ -295,12 +307,14 @@ function DailyActivityChart({ data }) {
             </div>
             <div className="flex-1">
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-700 font-medium">Conversations</span>
-                <span className="text-purple-600 font-bold">
+                <span className="text-gray-700 dark:text-gray-300 font-medium">
+                  Conversations
+                </span>
+                <span className="text-purple-600 dark:text-purple-400 font-bold">
                   {day.conversations}
                 </span>
               </div>
-              <div className="bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div className="bg-gray-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
                 <div
                   className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500 shadow-sm"
                   style={{
