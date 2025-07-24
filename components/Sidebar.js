@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MessageCircle, Edit, Trash2 } from "lucide-react";
+import { MessageCircle, Edit, Trash2, User, LogOut } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { ExportButton } from "./ExportButton";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Sidebar() {
   const [conversations, setConversations] = useState([]);
@@ -10,25 +11,44 @@ export function Sidebar() {
   const [editTitle, setEditTitle] = useState("");
   const router = useRouter();
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   const fetchConversations = () => {
-    fetch("/api/conversation")
-      .then((res) => res.json())
-      .then(setConversations)
-      .catch(console.error);
+    if (!user) {
+      setConversations([]);
+      return;
+    }
+
+    fetch("/api/conversation", {
+      credentials: "include",
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        // Ensure data is an array
+        setConversations(Array.isArray(data) ? data : []);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch conversations:", error);
+        setConversations([]);
+      });
   };
 
   useEffect(() => {
-    // Initial fetch
-    fetchConversations();
+    if (user) {
+      fetchConversations();
 
-    // Set up polling to check for title updates every 5 seconds
-    const interval = setInterval(fetchConversations, 5000);
+      const interval = setInterval(fetchConversations, 5000);
+      return () => clearInterval(interval);
+    } else {
+      setConversations([]);
+    }
+  }, [user]);
 
-    return () => clearInterval(interval);
-  }, []);
-
-  // Refresh conversations when pathname changes (new conversation created)
   useEffect(() => {
     fetchConversations();
   }, [pathname]);
@@ -130,6 +150,33 @@ export function Sidebar() {
           </div>
         </div>
       </nav>
+
+      {/* User Profile Section */}
+      {user && (
+        <div className="p-4 border-t border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">
+                  {user.name}
+                </p>
+                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              className="p-1 hover:bg-gray-700 rounded transition-colors"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4 text-gray-400" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="p-4 border-t border-gray-700 mt-auto">
         <div className="text-center space-y-2">
           <span className="text-xs text-gray-400">Powered by</span>

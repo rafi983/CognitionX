@@ -1,5 +1,6 @@
 import localFont from "next/font/local";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const satoshi = localFont({
   src: [
@@ -18,7 +19,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={satoshi.className}>{children}</body>
+      <body className={satoshi.className}>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

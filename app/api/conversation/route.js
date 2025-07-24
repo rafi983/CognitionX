@@ -4,9 +4,31 @@ import Conversation from "@/models/Conversation";
 import Message from "@/models/Message";
 import { getGeminiResponse } from "@/lib/gemini";
 import { generateTitle } from "@/lib/titleGenerator";
+import { getTokenFromRequest, verifyToken } from "@/lib/auth";
+import User from "@/models/User";
 
 export async function POST(req) {
   await connectToDatabase();
+
+  // Check authentication
+  const token = getTokenFromRequest(req);
+  if (!token) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
+  }
+
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  }
+
+  const user = await User.findById(decoded.userId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
   const { title, message, model, systemPrompt, imageUrl, magicCommandResult } =
     await req.json();
 
@@ -22,6 +44,7 @@ export async function POST(req) {
       title: "Generating title...",
       model,
       systemPrompt: systemPrompt || "",
+      userId: user._id, // Associate conversation with user
     });
 
     const userMsg = await Message.create({
@@ -103,8 +126,31 @@ export async function POST(req) {
   }
 }
 
-export async function GET() {
+export async function GET(req) {
   await connectToDatabase();
-  const conversations = await Conversation.find().sort({ updatedAt: -1 });
+
+  // Check authentication
+  const token = getTokenFromRequest(req);
+  if (!token) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
+  }
+
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  }
+
+  const user = await User.findById(decoded.userId);
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  // Only return conversations for the authenticated user
+  const conversations = await Conversation.find({ userId: user._id }).sort({
+    updatedAt: -1,
+  });
   return NextResponse.json(conversations);
 }

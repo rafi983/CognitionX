@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import LoginForm from "@/components/LoginForm";
+import RegisterForm from "@/components/RegisterForm";
 import { Sidebar } from "@/components/Sidebar";
 import { Zap, ArrowRight, ImageIcon, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -50,11 +53,15 @@ export default function WelcomePage() {
   const [, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showLogin, setShowLogin] = useState(true);
+  const [showCommandSuggestions, setShowCommandSuggestions] = useState(false);
+  const [commandSuggestions, setCommandSuggestions] = useState([]);
   const fileInputRef = useRef(null);
   const router = useRouter();
 
   const { isListening, speechError, startListening, stopListening } =
     useSpeech();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
     fetch("/api/models")
@@ -76,6 +83,22 @@ export default function WelcomePage() {
         setError("Failed to load models. Please refresh the page.");
       });
   }, []);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return showLogin ? (
+      <LoginForm onSwitchToRegister={() => setShowLogin(false)} />
+    ) : (
+      <RegisterForm onSwitchToLogin={() => setShowLogin(true)} />
+    );
+  }
 
   const getSystemPrompt = () => {
     if (selectedPersona === "custom") {
@@ -118,14 +141,9 @@ export default function WelcomePage() {
     }
   };
 
-  // Magic commands state
-  const [showCommandSuggestions, setShowCommandSuggestions] = useState(false);
-  const [commandSuggestions, setCommandSuggestions] = useState([]);
-
   const handleInputChange = (value) => {
     setInput(value);
 
-    // Check if input is a magic command
     if (isMagicCommand(value)) {
       const query = value.slice(1).toLowerCase();
       const suggestions = getMagicCommandSuggestions(query);
@@ -154,13 +172,12 @@ export default function WelcomePage() {
       const result = await executeMagicCommand(
         command,
         args,
-        [], // No conversation history on home page
-        null, // No conversation ID
+        [],
+        null,
         selectedModel,
       );
 
       if (result.success) {
-        // For home page, create a new conversation with the magic command result
         const res = await fetch("/api/conversation", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -225,25 +242,30 @@ export default function WelcomePage() {
     }
   };
 
-  const handleVoiceInput = (transcript, autoSend = false) => {
-    setInput(transcript);
-    if (autoSend && transcript.trim()) {
-      setTimeout(() => {
-        handleSend(transcript);
-      }, 100);
-    }
-  };
-
   const handleSubmit = async (inputText = null) => {
     const textToSend = inputText || input;
     if (!textToSend.trim() && !imagePreview) return;
 
-    // Check if input is a magic command
     if (isMagicCommand(textToSend)) {
       await handleMagicCommand(textToSend);
     } else {
       await handleSend(textToSend);
     }
+  };
+
+  const handleInputFocus = () => {
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleVoiceClick = () => {
+    startListening(handleVoiceInput, true);
+  };
+
+  const handleVoiceInput = (transcript) => {
+    setInput(transcript);
   };
 
   const selectCommandSuggestion = (suggestion) => {
@@ -298,10 +320,10 @@ export default function WelcomePage() {
               value={input}
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+              onFocus={handleInputFocus}
               disabled={loading}
               maxLength={1000}
             />
-            {/* Magic Commands Dropdown - positioned above input */}
             {showCommandSuggestions && (
               <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
                 {commandSuggestions.length === 0 ? (
@@ -359,7 +381,7 @@ export default function WelcomePage() {
                 disabled={loading}
               />
               <button
-                onClick={() => fileInputRef.current?.click()}
+                onClick={handleUploadClick}
                 className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
                 disabled={loading || isUploadingImage}
                 title="Upload image"
@@ -375,7 +397,7 @@ export default function WelcomePage() {
               />
               <VoiceInputButton
                 isListening={isListening}
-                onStartListening={() => startListening(handleVoiceInput, true)}
+                onStartListening={handleVoiceClick}
                 onStopListening={stopListening}
                 disabled={loading}
               />
