@@ -251,6 +251,7 @@ export const useStreaming = (conversationId) => {
 
   return {
     isStreaming,
+    setIsStreaming,
     streamedContent,
     handleStreamingResponse,
     handleMessageRegenerate,

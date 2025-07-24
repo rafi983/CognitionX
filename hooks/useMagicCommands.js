@@ -13,7 +13,6 @@ export const useMagicCommands = (messages, conversationId, selectedModel) => {
   const handleInputChange = (value, setInput) => {
     setInput(value);
 
-    // Check if input is a magic command
     if (isMagicCommand(value)) {
       const query = value.slice(1).toLowerCase();
       const suggestions = getMagicCommandSuggestions(query);
@@ -52,7 +51,6 @@ export const useMagicCommands = (messages, conversationId, selectedModel) => {
     setIsStreaming(true);
     setError("");
 
-    // Add user message for the command
     const commandMsg = {
       _id: Date.now().toString(),
       role: "user",
@@ -61,7 +59,6 @@ export const useMagicCommands = (messages, conversationId, selectedModel) => {
     };
     setMessages((prev) => [...prev, commandMsg]);
 
-    // Create streaming placeholder for magic command response
     const placeholderAssistantMsg = {
       _id: `magic-streaming-${Date.now()}`,
       role: "assistant",
@@ -74,7 +71,22 @@ export const useMagicCommands = (messages, conversationId, selectedModel) => {
     setShowCommandSuggestions(false);
 
     try {
-      // Get the magic command result
+      const saveUserMessageResponse = await fetch(
+        `/api/conversation/${conversationId}/message`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            role: "user",
+            content: commandInput,
+          }),
+        },
+      );
+
+      if (!saveUserMessageResponse.ok) {
+        throw new Error("Failed to save command message");
+      }
+
       const result = await executeMagicCommand(
         command,
         args,
@@ -84,12 +96,10 @@ export const useMagicCommands = (messages, conversationId, selectedModel) => {
       );
 
       if (result.success) {
-        // Simulate streaming by displaying the result gradually
         const fullContent = result.result;
         const words = fullContent.split(" ");
         let currentContent = "";
 
-        // Stream the content word by word for a better UX
         for (let i = 0; i < words.length; i++) {
           currentContent += (i > 0 ? " " : "") + words[i];
 
@@ -101,11 +111,25 @@ export const useMagicCommands = (messages, conversationId, selectedModel) => {
             ),
           );
 
-          // Add a small delay to simulate streaming
           await new Promise((resolve) => setTimeout(resolve, 50));
         }
 
-        // Mark streaming as complete
+        const saveAIMessageResponse = await fetch(
+          `/api/conversation/${conversationId}/message`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              role: "assistant",
+              content: fullContent,
+            }),
+          },
+        );
+
+        if (!saveAIMessageResponse.ok) {
+          console.error("Failed to save AI response message");
+        }
+
         setMessages((prev) =>
           prev.map((msg) =>
             msg._id === placeholderAssistantMsg._id
@@ -115,14 +139,12 @@ export const useMagicCommands = (messages, conversationId, selectedModel) => {
         );
       } else {
         setError(result.error);
-        // Remove the placeholder message on error
         setMessages((prev) =>
           prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
         );
       }
     } catch (error) {
       setError(`Command failed: ${error.message}`);
-      // Remove the placeholder message on error
       setMessages((prev) =>
         prev.filter((msg) => msg._id !== placeholderAssistantMsg._id),
       );

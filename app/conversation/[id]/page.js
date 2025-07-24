@@ -35,8 +35,12 @@ export default function ConversationPage() {
   // Custom hooks
   const { isListening, speechError, startListening, stopListening } =
     useSpeech();
-  const { isStreaming, handleStreamingResponse, handleMessageRegenerate } =
-    useStreaming(conversationId);
+  const {
+    isStreaming,
+    setIsStreaming,
+    handleStreamingResponse,
+    handleMessageRegenerate,
+  } = useStreaming(conversationId);
   const {
     selectedImage,
     imagePreview,

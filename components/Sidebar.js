@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MessageCircle, Edit, Trash2, User, LogOut } from "lucide-react";
+import {
+  MessageCircle,
+  Edit,
+  Trash2,
+  User,
+  LogOut,
+  BarChart3,
+} from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { ExportButton } from "./ExportButton";
 import { useAuth } from "@/contexts/AuthContext";
@@ -89,13 +96,20 @@ export function Sidebar() {
         </div>
       </div>
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        <div>
+        <div className="space-y-1">
           <Link
             href="/"
             className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors"
           >
             <MessageCircle className="w-4 h-4" />
             <span className="text-sm">Create Chat</span>
+          </Link>
+          <Link
+            href="/analytics"
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span className="text-sm">Analytics</span>
           </Link>
         </div>
         <div className="pt-4">
