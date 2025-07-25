@@ -57,34 +57,81 @@ export function APIPlayground({ models }) {
 
   // Load saved data from localStorage
   useEffect(() => {
+    // Load test history first
     const savedHistory = localStorage.getItem("playground_history");
-    const savedPresets = localStorage.getItem("playground_presets");
-
     if (savedHistory) {
       try {
-        setTestHistory(JSON.parse(savedHistory));
+        const parsedHistory = JSON.parse(savedHistory);
+        setTestHistory(parsedHistory);
       } catch (e) {
         console.error("Failed to load test history:", e);
+        setTestHistory([]);
       }
     }
 
+    // Load presets
+    const savedPresets = localStorage.getItem("playground_presets");
     if (savedPresets) {
       try {
-        setSavedPresets(JSON.parse(savedPresets));
+        const parsedPresets = JSON.parse(savedPresets);
+        setSavedPresets(parsedPresets);
       } catch (e) {
         console.error("Failed to load presets:", e);
+        setSavedPresets([]);
       }
     }
-  }, []);
 
-  // Save history to localStorage
+    // Load current state (prompt, parameters, response, etc.)
+    const savedState = localStorage.getItem("playground_current_state");
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        if (
+          state.selectedModel &&
+          models.some((m) => m.name === state.selectedModel)
+        ) {
+          setSelectedModel(state.selectedModel);
+        }
+        if (state.parameters) setParameters(state.parameters);
+        if (state.prompt) setPrompt(state.prompt);
+        if (state.response) setResponse(state.response);
+        if (state.metrics) setMetrics(state.metrics);
+        if (state.activeTab) setActiveTab(state.activeTab);
+      } catch (e) {
+        console.error("Failed to load current state:", e);
+      }
+    }
+  }, [models]);
+
+  // Save current state to localStorage whenever key values change
   useEffect(() => {
-    localStorage.setItem("playground_history", JSON.stringify(testHistory));
+    const currentState = {
+      selectedModel,
+      parameters,
+      prompt,
+      response,
+      metrics,
+      activeTab,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(
+      "playground_current_state",
+      JSON.stringify(currentState),
+    );
+  }, [selectedModel, parameters, prompt, response, metrics, activeTab]);
+
+  // Save test history to localStorage whenever it changes
+  useEffect(() => {
+    if (testHistory.length > 0) {
+      localStorage.setItem("playground_history", JSON.stringify(testHistory));
+    }
   }, [testHistory]);
 
-  // Save presets to localStorage
+  // Save presets to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("playground_presets", JSON.stringify(savedPresets));
+    if (savedPresets.length > 0) {
+      localStorage.setItem("playground_presets", JSON.stringify(savedPresets));
+    }
   }, [savedPresets]);
 
   const executeTest = async () => {
@@ -203,6 +250,8 @@ export function APIPlayground({ models }) {
       setResponse(historyItem.response);
       setMetrics(historyItem.metrics);
     }
+    // Switch to test tab to show the loaded configuration
+    setActiveTab("test");
   };
 
   const tabs = [
@@ -237,7 +286,7 @@ export function APIPlayground({ models }) {
       {/* Main Content */}
       {activeTab === "test" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Panel - Controls */}
+          {/* Left Panel - Configuration */}
           <div className="space-y-6">
             {/* Model Selection */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
@@ -263,7 +312,10 @@ export function APIPlayground({ models }) {
                 onParametersChange={setParameters}
               />
             </div>
+          </div>
 
+          {/* Right Panel - Content */}
+          <div className="space-y-6">
             {/* Prompt Editor */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
               <div className="flex justify-between items-center mb-4">
@@ -293,10 +345,7 @@ export function APIPlayground({ models }) {
                 }
               />
             </div>
-          </div>
 
-          {/* Right Panel - Results */}
-          <div className="space-y-6">
             {/* Response */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg">
               <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center">

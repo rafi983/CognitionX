@@ -6,11 +6,24 @@ import {
   Play,
   Trash2,
   Search,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 export function TestHistory({ history, onLoadFromHistory, onClearHistory }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all"); // all, success, error
+  const [expandedItems, setExpandedItems] = useState(new Set());
+
+  const toggleExpanded = (itemId) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(itemId)) {
+      newExpanded.delete(itemId);
+    } else {
+      newExpanded.add(itemId);
+    }
+    setExpandedItems(newExpanded);
+  };
 
   const filteredHistory = history.filter((item) => {
     const matchesSearch =
@@ -124,10 +137,34 @@ export function TestHistory({ history, onLoadFromHistory, onClearHistory }) {
               {/* Response/Error Preview */}
               {item.success ? (
                 <div className="mb-3">
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Response:
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Response:
+                    </div>
+                    {item.response.length > 200 && (
+                      <button
+                        onClick={() => toggleExpanded(item.id)}
+                        className="flex items-center space-x-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                      >
+                        {expandedItems.has(item.id) ? (
+                          <>
+                            <ChevronUp className="w-3 h-3" />
+                            <span>Show Less</span>
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-3 h-3" />
+                            <span>Show More</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded line-clamp-2">
+                  <div
+                    className={`text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-3 rounded whitespace-pre-wrap ${
+                      expandedItems.has(item.id) ? "" : "line-clamp-3"
+                    }`}
+                  >
                     {item.response}
                   </div>
                 </div>
