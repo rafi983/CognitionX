@@ -62,36 +62,36 @@ export const Message = ({
     pre: ({ children }) => <div>{children}</div>, // Remove default pre wrapper
     // Enhanced blockquote styling
     blockquote: ({ children }) => (
-      <blockquote className="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 text-gray-700 italic">
+      <blockquote className="border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 italic">
         {children}
       </blockquote>
     ),
     // Enhanced table styling
     table: ({ children }) => (
       <div className="overflow-x-auto my-4">
-        <table className="min-w-full border border-gray-200 rounded-lg">
+        <table className="min-w-full border border-gray-200 dark:border-gray-600 rounded-lg">
           {children}
         </table>
       </div>
     ),
     th: ({ children }) => (
-      <th className="px-4 py-2 bg-gray-100 border-b border-gray-200 text-left font-semibold text-gray-800">
+      <th className="px-4 py-2 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 text-left font-semibold text-gray-800 dark:text-white">
         {children}
       </th>
     ),
     td: ({ children }) => (
-      <td className="px-4 py-2 border-b border-gray-100 text-gray-700">
+      <td className="px-4 py-2 border-b border-gray-100 dark:border-gray-600 text-gray-700 dark:text-gray-300">
         {children}
       </td>
     ),
     // Enhanced list styling
     ul: ({ children }) => (
-      <ul className="list-disc list-inside space-y-1 my-2 text-gray-700">
+      <ul className="list-disc list-inside space-y-1 my-2 text-gray-700 dark:text-gray-300">
         {children}
       </ul>
     ),
     ol: ({ children }) => (
-      <ol className="list-decimal list-inside space-y-1 my-2 text-gray-700">
+      <ol className="list-decimal list-inside space-y-1 my-2 text-gray-700 dark:text-gray-300">
         {children}
       </ol>
     ),
@@ -101,7 +101,7 @@ export const Message = ({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-600 hover:text-blue-800 underline transition-colors"
+        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline transition-colors"
       >
         {children}
       </a>
@@ -126,8 +126,8 @@ export const Message = ({
           <div
             className={`rounded-2xl px-4 py-3 max-w-3xl prose prose-sm max-w-none ${
               isAI
-                ? "bg-white border border-gray-200 text-gray-800"
-                : "bg-gray-100 text-gray-800"
+                ? "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-200"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
             }`}
           >
             {(imageData || imageUrl) && (
@@ -163,7 +163,7 @@ export const Message = ({
                 <textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={Math.max(2, editContent.split("\n").length)}
                   autoFocus
                 />
@@ -185,7 +185,7 @@ export const Message = ({
                 </div>
               </div>
             ) : (
-              <div className="prose prose-sm max-w-none prose-code:bg-transparent prose-pre:bg-transparent prose-pre:p-0">
+              <div className="prose prose-sm max-w-none prose-code:bg-transparent prose-pre:bg-transparent prose-pre:p-0 dark:prose-invert">
                 <Markdown
                   remarkPlugins={[remarkGfm]}
                   components={markdownComponents}
@@ -193,7 +193,7 @@ export const Message = ({
                   {content || ""}
                 </Markdown>
                 {isStreaming && (
-                  <span className="inline-block w-2 h-4 ml-1 bg-gray-800 animate-pulse">
+                  <span className="inline-block w-2 h-4 ml-1 bg-gray-800 dark:bg-gray-300 animate-pulse">
                     &#8203;
                   </span>
                 )}
@@ -212,13 +212,13 @@ export const Message = ({
 
         {/* Action Menu */}
         {showActions && !isStreaming && !isEditing && (
-          <div className="absolute right-0 top-0 flex items-center space-x-1 bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-10">
+          <div className="absolute right-0 top-0 flex items-center space-x-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-1 z-10">
             <button
               onClick={handleCopy}
               className={`p-2 rounded-md transition-colors ${
                 copySuccess
-                  ? "bg-green-100 text-green-600"
-                  : "hover:bg-gray-100 text-gray-600"
+                  ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
               }`}
               title="Copy message"
             >
@@ -228,7 +228,7 @@ export const Message = ({
             {!isAI && (
               <button
                 onClick={handleEdit}
-                className="p-2 rounded-md hover:bg-gray-100 text-gray-600 transition-colors"
+                className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors"
                 title="Edit message"
               >
                 <Edit3 size={14} />
@@ -238,7 +238,7 @@ export const Message = ({
             {isAI && isLastUserMessage && (
               <button
                 onClick={handleRegenerate}
-                className="p-2 rounded-md hover:bg-gray-100 text-gray-600 transition-colors"
+                className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors"
                 title="Regenerate response"
               >
                 <RotateCcw size={14} />
@@ -248,7 +248,9 @@ export const Message = ({
         )}
 
         {time && (
-          <span className="text-xs text-gray-500 mt-1 block">{time}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
+            {time}
+          </span>
         )}
       </div>
     </div>
@@ -259,8 +261,8 @@ export const LoadingSkeleton = () => (
   <div className="flex items-start space-x-3 animate-pulse">
     <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-300 to-pink-300 flex-shrink-0" />
     <div className="flex-1">
-      <div className="rounded-2xl px-4 py-3 max-w-3xl bg-gray-100 h-6 mb-2" />
-      <div className="rounded-2xl px-4 py-3 max-w-xl bg-gray-100 h-4" />
+      <div className="rounded-2xl px-4 py-3 max-w-3xl bg-gray-100 dark:bg-gray-700 h-6 mb-2" />
+      <div className="rounded-2xl px-4 py-3 max-w-xl bg-gray-100 dark:bg-gray-700 h-4" />
     </div>
   </div>
 );

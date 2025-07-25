@@ -13,7 +13,7 @@ export const VoiceInputButton = ({
       className={`p-2 rounded-lg transition-colors ${
         isListening
           ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
-          : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
       } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       title={isListening ? "Stop listening" : "Start voice input"}
     >
@@ -48,8 +48,8 @@ export const TextToSpeechButton = ({
       className={`p-2 rounded-lg transition-colors ${
         isSpeaking
           ? "bg-blue-500 hover:bg-blue-600 text-white animate-pulse"
-          : "bg-gray-100 hover:bg-gray-200 text-gray-600"
-      } ${disabled || !text?.trim() ? "opacity-50 cursor-not-allowed" : ""}`}
+          : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
+      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       title={isSpeaking ? "Stop speaking" : "Read aloud"}
     >
       {isSpeaking ? (

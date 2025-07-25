@@ -413,7 +413,7 @@ export default function WelcomePage() {
                 {input.length}/1000
               </span>
               <button
-                className="bg-black dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-black px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                className="bg-black dark:bg-gray-700 hover:bg-gray-800 dark:hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
                 onClick={() => handleSubmit()}
                 disabled={loading || (!input.trim() && !imagePreview)}
               >

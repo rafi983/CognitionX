@@ -243,15 +243,18 @@ export default function ConversationPage() {
 
   if (notFound) {
     return (
-      <div className="flex h-screen items-center justify-center bg-white">
+      <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-900">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
             Conversation not found
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             This conversation may have been deleted or never existed.
           </p>
-          <a href="/" className="text-blue-600 hover:underline">
+          <a
+            href="/"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
             Go back to home
           </a>
         </div>
@@ -260,14 +263,14 @@ export default function ConversationPage() {
   }
 
   return (
-    <div className="flex h-screen mx-auto bg-white max-h-screen">
+    <div className="flex h-screen mx-auto bg-white dark:bg-gray-900 max-h-screen">
       <Sidebar />
-      <main className="flex-1 flex flex-col bg-white">
-        <header className="px-8 py-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+      <main className="flex-1 flex flex-col bg-white dark:bg-gray-900">
+        <header className="px-8 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 sticky top-0 z-10">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-3 h-3 bg-green-500 rounded-full" />
-              <h1 className="text-lg font-semibold text-gray-800 truncate max-w-xs">
+              <h1 className="text-lg font-semibold text-gray-800 dark:text-white truncate max-w-xs">
                 {conversation?.title || "Conversation"}
               </h1>
             </div>
@@ -275,7 +278,7 @@ export default function ConversationPage() {
               <div className="flex items-center space-x-2">
                 <ExportButton
                   conversationId={conversationId}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 />
               </div>
             )}

@@ -333,7 +333,7 @@ function DailyActivityChart({ data }) {
 function PeakTimesChart({ data }) {
   if (!data || data.length === 0) {
     return (
-      <div className="text-gray-600 text-center py-8 bg-gray-50 rounded-lg">
+      <div className="text-gray-600 dark:text-gray-400 text-center py-8 bg-gray-50 dark:bg-gray-700 rounded-lg">
         No timing data available
       </div>
     );
@@ -378,7 +378,7 @@ function PeakTimesChart({ data }) {
 
   if (totalMessages === 0) {
     return (
-      <div className="text-gray-600 text-center py-8 bg-gray-50 rounded-lg">
+      <div className="text-gray-600 dark:text-gray-400 text-center py-8 bg-gray-50 dark:bg-gray-700 rounded-lg">
         No usage data available
       </div>
     );
@@ -457,6 +457,15 @@ function PeakTimesChart({ data }) {
                   />
                 </radialGradient>
               ))}
+              {/* Center circle gradient for dark mode */}
+              <radialGradient id="centerGradient" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="white" stopOpacity="1" />
+                <stop offset="100%" stopColor="#f8fafc" stopOpacity="1" />
+              </radialGradient>
+              <radialGradient id="centerGradientDark" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#374151" stopOpacity="1" />
+                <stop offset="100%" stopColor="#1f2937" stopOpacity="1" />
+              </radialGradient>
             </defs>
 
             {/* Background circle */}
@@ -467,6 +476,7 @@ function PeakTimesChart({ data }) {
               fill="none"
               stroke="#f3f4f6"
               strokeWidth="6"
+              className="dark:stroke-gray-600"
             />
 
             {/* Pie segments */}
@@ -496,7 +506,7 @@ function PeakTimesChart({ data }) {
                   fill={segment.color}
                   stroke="white"
                   strokeWidth="3"
-                  className="hover:opacity-80 transition-all duration-300 cursor-pointer transform hover:scale-105"
+                  className="hover:opacity-80 transition-all duration-300 cursor-pointer transform hover:scale-105 dark:stroke-gray-800"
                   style={{
                     filter: "drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15))",
                     transformOrigin: "140px 140px",
@@ -519,12 +529,6 @@ function PeakTimesChart({ data }) {
             ))}
 
             {/* Center circle with gradient */}
-            <defs>
-              <radialGradient id="centerGradient" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="white" stopOpacity="1" />
-                <stop offset="100%" stopColor="#f8fafc" stopOpacity="1" />
-              </radialGradient>
-            </defs>
             <circle
               cx="140"
               cy="140"
@@ -532,7 +536,7 @@ function PeakTimesChart({ data }) {
               fill="url(#centerGradient)"
               stroke="#e2e8f0"
               strokeWidth="3"
-              className="drop-shadow-lg"
+              className="drop-shadow-lg dark:fill-[url(#centerGradientDark)] dark:stroke-gray-600"
             />
 
             {/* Center text */}
@@ -540,7 +544,7 @@ function PeakTimesChart({ data }) {
               x="140"
               y="135"
               textAnchor="middle"
-              className="fill-gray-700 text-lg font-bold transform rotate-90"
+              className="fill-gray-700 dark:fill-gray-300 text-lg font-bold transform rotate-90"
               style={{ transformOrigin: "140px 140px" }}
             >
               Total
@@ -549,7 +553,7 @@ function PeakTimesChart({ data }) {
               x="140"
               y="155"
               textAnchor="middle"
-              className="fill-gray-600 text-sm font-semibold transform rotate-90"
+              className="fill-gray-600 dark:fill-gray-400 text-sm font-semibold transform rotate-90"
               style={{ transformOrigin: "140px 140px" }}
             >
               {totalMessages}
@@ -563,18 +567,18 @@ function PeakTimesChart({ data }) {
         {segments.map((segment, index) => (
           <div
             key={segment.name}
-            className="flex items-center space-x-3 p-4 bg-gradient-to-r from-white to-gray-50 rounded-xl border-2 border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+            className="flex items-center space-x-3 p-4 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
           >
             <div className="flex items-center space-x-3">
               <div
-                className="w-6 h-6 rounded-full shadow-md border-2 border-white"
+                className="w-6 h-6 rounded-full shadow-md border-2 border-white dark:border-gray-600"
                 style={{ backgroundColor: segment.color }}
               />
               <div className="flex-1">
-                <div className="text-sm font-bold text-gray-800">
+                <div className="text-sm font-bold text-gray-800 dark:text-white">
                   {segment.name}
                 </div>
-                <div className="text-xs text-gray-600 font-medium">
+                <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                   {segment.total} messages ({segment.percentage.toFixed(1)}%)
                 </div>
               </div>
@@ -585,11 +589,11 @@ function PeakTimesChart({ data }) {
 
       {/* Enhanced hourly breakdown */}
       <div className="mt-8">
-        <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-          <Clock className="w-5 h-5 mr-2 text-purple-600" />
+        <h4 className="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center">
+          <Clock className="w-5 h-5 mr-2 text-purple-600 dark:text-purple-400" />
           Detailed Hourly Breakdown
         </h4>
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
           <div className="grid grid-cols-12 gap-2">
             {Array.from({ length: 24 }, (_, hour) => {
               const hourData = data.find((d) => d.hour === hour) || {
@@ -602,7 +606,7 @@ function PeakTimesChart({ data }) {
               const isActiveHour = hourData.count > 0;
 
               // Determine time group color
-              let colorClass = "bg-gray-300";
+              let colorClass = "bg-gray-300 dark:bg-gray-600";
               let glowClass = "";
               if (timeGroups["Morning (6-11)"].hours.includes(hour)) {
                 colorClass = "bg-gradient-to-t from-blue-400 to-blue-500";
@@ -624,18 +628,18 @@ function PeakTimesChart({ data }) {
                     <div
                       className={`w-full rounded-t-lg transition-all duration-500 ${
                         isActiveHour
-                          ? `${colorClass} shadow-lg ${glowClass} border border-white/20`
-                          : "bg-gray-200"
+                          ? `${colorClass} shadow-lg ${glowClass} border border-white/20 dark:border-gray-700/20`
+                          : "bg-gray-200 dark:bg-gray-600"
                       } group-hover:scale-110 group-hover:shadow-xl`}
                       style={{ height: `${Math.max(height, 10)}%` }}
                       title={`${hour}:00 - ${hourData.count} messages`}
                     />
                   </div>
-                  <div className="text-xs text-gray-700 font-semibold">
+                  <div className="text-xs text-gray-700 dark:text-gray-300 font-semibold">
                     {hour % 4 === 0 ? `${hour}h` : ""}
                   </div>
                   {isActiveHour && (
-                    <div className="text-xs text-gray-600 font-medium mt-1">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 font-medium mt-1">
                       {hourData.count}
                     </div>
                   )}
@@ -652,7 +656,7 @@ function PeakTimesChart({ data }) {
 function UsageList({ data, type, colorScheme }) {
   if (!data || data.length === 0) {
     return (
-      <div className="text-gray-600 text-center py-8 bg-gray-50 rounded-lg">
+      <div className="text-gray-600 dark:text-gray-400 text-center py-8 bg-gray-50 dark:bg-gray-700 rounded-lg">
         No {type} data available
       </div>
     );
@@ -676,16 +680,20 @@ function UsageList({ data, type, colorScheme }) {
         return (
           <div key={label} className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="font-semibold text-gray-800">{label}</span>
-              <span className="text-gray-700 font-bold">{item.count}</span>
+              <span className="font-semibold text-gray-800 dark:text-white">
+                {label}
+              </span>
+              <span className="text-gray-700 dark:text-gray-300 font-bold">
+                {item.count}
+              </span>
             </div>
-            <div className="bg-gray-200 rounded-full h-3 overflow-hidden">
+            <div className="bg-gray-200 dark:bg-gray-600 rounded-full h-3 overflow-hidden">
               <div
                 className={`bg-gradient-to-r ${colorSchemes[colorScheme]} h-3 rounded-full transition-all duration-500 shadow-sm`}
                 style={{ width: `${percentage}%` }}
               />
             </div>
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-gray-600 dark:text-gray-400">
               {percentage.toFixed(1)}% of total
             </div>
           </div>
