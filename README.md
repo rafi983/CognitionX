@@ -1,36 +1,248 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🧠 CognitionX - Advanced AI Conversation Platform
 
-## Getting Started
+CognitionX is a comprehensive AI-powered conversation platform built with Next.js that goes far beyond simple chat functionality. It provides enterprise-level features for AI interaction, testing, analytics, and conversation management.
 
-First, run the development server:
+## 🚀 Core Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### 💬 **Intelligent Chat System**
+- **Real-time messaging** with Google Gemini AI integration
+- **Dynamic conversation routing** with unique shareable URLs (`/conversation/<ID>`)
+- **MongoDB Atlas integration** for persistent conversation storage
+- **Server-side API handling** - All Gemini API calls are processed server-side for security
+- **Auto-generated conversation titles** using AI
+- **Conversation management** with edit, delete, and share capabilities
+
+### 🎯 **Create Chat Workflow**
+- **Initial prompt form** with suggestion chips for quick start
+- **Conversation creation** only after first message is sent
+- **Smart conversation listing** in sidebar with chronological organization
+- **Seamless conversation switching** between multiple chat sessions
+
+## ✨ Extra Features (13 Advanced Capabilities)
+
+### 1. 🔐 **Authentication System**
+- **Secure user registration and login** with JWT token management
+- **Password hashing** using bcryptjs for security
+- **Protected routes** and session management
+- **User profile management** with persistent login state
+- **Logout functionality** with token cleanup
+
+### 2. 📊 **Analytics Dashboard**
+- **Comprehensive usage analytics** with visual charts
+- **Message count tracking** and response time metrics
+- **Time-based filtering** (daily, weekly, monthly views)
+- **User activity patterns** and conversation trends
+- **Performance monitoring** with detailed statistics
+- **Interactive data visualization** using modern chart components
+
+### 3. 🛝 **API Playground**
+- **Interactive testing environment** for AI models
+- **Parameter controls** (temperature, max tokens, top-p, frequency penalty)
+- **Advanced prompt editor** with syntax highlighting
+- **Response viewer** with formatted output display
+- **Performance metrics** tracking for each test
+- **Code generation** capabilities for different programming languages
+- **Test history** with save/load functionality
+- **Preset management** for commonly used configurations
+- **Export functionality** for test results and configurations
+
+### 4. ⚖️ **Model Comparison Tool**
+- **Side-by-side comparison** of multiple AI model responses
+- **Voting system** with thumbs up/down for response quality
+- **Performance metrics comparison** (response time, word count, quality)
+- **Save comparison results** for future reference
+- **Export comparison data** in multiple formats
+- **Visual comparison interface** with clear model differentiation
+
+### 5. 🎭 **Persona System**
+- **Multiple AI personalities** with distinct conversation styles
+- **Pre-built persona templates** (Professional, Creative, Technical, etc.)
+- **Custom persona configuration** with personality traits
+- **Persona-specific prompt templates** and response styles
+- **Dynamic persona switching** within conversations
+- **Persona behavior customization** for specialized use cases
+
+### 6. 🎤 **Speech Integration**
+- **Voice input functionality** with speech-to-text conversion
+- **Voice controls** for hands-free interaction
+- **Audio feedback** capabilities for responses
+- **Multiple language support** for voice recognition
+- **Voice command processing** with magic command integration
+- **Microphone permission management** and error handling
+
+### 7. ✨ **Magic Commands System**
+- **Special command syntax** (e.g., `/help`, `/brainstorm`, `/analyze`)
+- **Auto-completion** and command suggestions
+- **Built-in command library** with extensible architecture
+- **Custom command creation** and execution
+- **Command help system** with documentation
+- **Context-aware commands** that understand conversation state
+
+### 8. 🖼️ **Image Upload & Processing**
+- **Drag-and-drop image upload** with preview functionality
+- **Multiple image format support** (PNG, JPG, GIF, WebP)
+- **Image attachment to messages** with AI vision capabilities
+- **Image compression** and optimization
+- **Visual image gallery** within conversations
+- **Image analysis** using Gemini's vision capabilities
+
+### 9. 🎨 **Theme System**
+- **Dark/Light mode toggle** with system preference detection
+- **Custom theme configuration** with color scheme options
+- **Responsive design** across all device types
+- **Theme persistence** across browser sessions
+- **Accessibility-focused** color contrast and typography
+- **Modern gradient designs** with smooth animations
+
+### 10. 🌊 **Streaming Responses**
+- **Real-time message streaming** from AI models
+- **Progressive response rendering** with typing indicators
+- **Smooth user experience** with live updates
+- **Stream interruption** and resumption capabilities
+- **Error handling** for interrupted streams
+- **Optimized performance** for long responses
+
+### 11. 🤖 **Multiple Gemini Models Support**
+- **Dynamic model fetching** from Google's API
+- **Model selection interface** with detailed specifications
+- **Support for latest Gemini versions** with automatic updates
+- **Deprecated model filtering** for optimal performance
+- **Model-specific optimizations** and timeout configurations
+- **Seamless model switching** without conversation interruption
+
+### 12. 🛠️ **Message Management Features**
+- **Copy Functionality**:
+  - Copy individual messages to clipboard
+  - Copy code blocks with syntax preservation
+  - Copy AI responses from comparison tools
+  - Visual feedback for successful copy operations
+- **Edit Capabilities**:
+  - Edit conversation titles inline
+  - Modify message content after sending
+  - Real-time edit validation and saving
+- **Regenerate Response**:
+  - Regenerate AI responses for better results
+  - Multiple regeneration attempts
+  - Compare different response variations
+
+### 13. 📤 **Export Functionality**
+- **Individual conversation export** in multiple formats
+- **Bulk conversation export** for data backup
+- **Format options**: JSON, PDF, TXT, Markdown
+- **Metadata inclusion** (timestamps, user info, model used)
+- **Shareable export links** for collaboration
+- **Export customization** with filtering options
+
+## 🛠️ Technology Stack
+
+- **Frontend**: Next.js 14, React 18, Tailwind CSS
+- **Backend**: Next.js API Routes, Node.js
+- **Database**: MongoDB Atlas with Mongoose ODM
+- **AI Integration**: Google Gemini API
+- **Authentication**: JWT tokens with bcryptjs
+- **Styling**: Tailwind CSS with custom themes
+- **Icons**: Lucide React icon library
+- **Markdown**: React Markdown with syntax highlighting
+- **Speech**: Web Speech API integration
+
+## 📁 Project Structure
+
+```
+CognitionX/
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes for backend functionality
+│   ├── conversation/      # Dynamic conversation pages
+│   ├── analytics/         # Analytics dashboard
+│   ├── playground/        # API testing playground
+│   └── compare/           # Model comparison tool
+├── components/            # Reusable React components
+├── contexts/              # React Context providers
+├── hooks/                 # Custom React hooks
+├── lib/                   # Utility libraries and configurations
+├── models/                # MongoDB data models
+└── public/                # Static assets
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Getting Started
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Prerequisites
+- Node.js 18+ and npm
+- MongoDB Atlas account
+- Google Gemini API key
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+### Installation
 
-## Learn More
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd CognitionX
+```
 
-To learn more about Next.js, take a look at the following resources:
+2. **Install dependencies**
+```bash
+npm install
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Environment setup**
+Create a `.env.local` file:
+```env
+MONGODB_URI=your_mongodb_atlas_connection_string
+GEMINI_API_KEY=your_google_gemini_api_key
+JWT_SECRET=your_jwt_secret_key
+NEXTAUTH_URL=http://localhost:3000
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+4. **Run the development server**
+```bash
+npm run dev
+```
 
-## Deploy on Vercel
+5. **Open your browser**
+Navigate to [http://localhost:3000](http://localhost:3000)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔧 Configuration
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+### MongoDB Setup
+1. Create a MongoDB Atlas cluster
+2. Set up database collections: `conversations`, `messages`, `users`
+3. Configure network access and database user permissions
+
+### Gemini API Setup
+1. Get API key from Google AI Studio
+2. Enable Gemini models in your Google Cloud project
+3. Configure rate limits and usage quotas
+
+## 📖 Usage Guide
+
+### Basic Chat
+1. **Register/Login** to your account
+2. **Click "Create Chat"** to start a new conversation
+3. **Type your message** or use voice input
+4. **Press Enter** or click Send to get AI response
+5. **Use suggestions** for quick prompts
+
+### Advanced Features
+- **Try the Playground** (`/playground`) for model testing
+- **Compare Models** (`/compare`) for response analysis
+- **View Analytics** (`/analytics`) for usage insights
+- **Use Magic Commands** like `/help` for special functions
+- **Upload Images** for vision-based AI interactions
+
+## 🤝 Contributing
+
+We welcome contributions! Please read our contributing guidelines and submit pull requests for any improvements.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue on GitHub
+- Check our documentation
+- Contact the development team
+
+---
+
+**CognitionX** - Empowering conversations with advanced AI capabilities 🚀
