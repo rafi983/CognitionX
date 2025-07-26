@@ -5,12 +5,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import LoginForm from "@/components/LoginForm";
 import RegisterForm from "@/components/RegisterForm";
 import { Sidebar } from "@/components/Sidebar";
-import { Zap, ArrowRight, ImageIcon, X } from "lucide-react";
+import { Zap, ArrowRight, ImageIcon, X, Database } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useSpeech } from "@/hooks/useSpeech";
 import { VoiceInputButton } from "@/components/SpeechControls";
 import { PersonaSelector } from "@/components/PersonaSelector";
 import { PERSONAS } from "@/lib/personas";
+import { KnowledgeBase } from "@/components/KnowledgeBase";
 import {
   isMagicCommand,
   parseMagicCommand,
@@ -48,12 +49,27 @@ export default function WelcomePage() {
   const [showLogin, setShowLogin] = useState(true);
   const [showCommandSuggestions, setShowCommandSuggestions] = useState(false);
   const [commandSuggestions, setCommandSuggestions] = useState([]);
+  const [showKnowledgeBase, setShowKnowledgeBase] = useState(false);
   const fileInputRef = useRef(null);
   const router = useRouter();
 
   const { isListening, speechError, startListening, stopListening } =
     useSpeech();
   const { user, loading: authLoading, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    // Handle RAG context from localStorage when returning from RAG page
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('context') === 'rag') {
+      const ragContext = localStorage.getItem('ragContext');
+      if (ragContext) {
+        setInput(ragContext);
+        localStorage.removeItem('ragContext'); // Clean up
+        // Update URL without context parameter
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     fetch("/api/models")
@@ -154,6 +170,13 @@ export default function WelcomePage() {
       setError(
         `Unknown command: ${command}. Type /help to see available commands.`,
       );
+      return;
+    }
+
+    // Handle /kb command to open Knowledge Base
+    if (command === "/kb") {
+      setShowKnowledgeBase(true);
+      setInput("");
       return;
     }
 
@@ -392,6 +415,14 @@ export default function WelcomePage() {
                 onStopListening={stopListening}
                 disabled={loading}
               />
+              <button
+                onClick={() => router.push('/rag')}
+                className="p-1 text-gray-500 hover:text-purple-600 transition-colors"
+                disabled={loading}
+                title="Knowledge Base"
+              >
+                <Database size={16} />
+              </button>
               <select
                 className="p-1 pr-6 border border-gray-300 dark:border-gray-600 rounded-md text-gray-800 dark:text-white bg-white dark:bg-gray-700 text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
                 value={selectedModel}

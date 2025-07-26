@@ -6,6 +6,7 @@ import { getGeminiResponse } from "@/lib/gemini";
 import { generateTitle } from "@/lib/titleGenerator";
 import { getTokenFromRequest, verifyToken } from "@/lib/auth";
 import User from "@/models/User";
+import { getRAGService } from "@/lib/ragService";
 
 export async function POST(req) {
   await connectToDatabase();
@@ -39,11 +40,37 @@ export async function POST(req) {
   }
 
   try {
+    // Check if we should use RAG context for this message
+    const ragService = getRAGService();
+    let finalMessage = message;
+    let ragContext = null;
+
+    // Use RAG context if the message seems like a question that could benefit from knowledge base
+    if (message && message.length > 10 &&
+      (message.includes('?') ||
+      message.toLowerCase().includes('what') ||
+      message.toLowerCase().includes('how') ||
+      message.toLowerCase().includes('why') ||
+      message.toLowerCase().includes('explain') ||
+      message.toLowerCase().includes('tell me about'))
+    ) {
+      try {
+        ragContext = ragService.generateContextualPrompt(message);
+        if (ragContext.hasContext) {
+          finalMessage = ragContext.prompt;
+        }
+      } catch (error) {
+        console.log('RAG context generation failed:', error.message);
+        // Continue without RAG context if it fails
+      }
+    }
+
     const userMsg = await Message.create({
       conversationId,
       role: "user",
       content: message || "Image attached",
       imageUrl: imageUrl || undefined,
+      ragContext: ragContext?.hasContext ? ragContext.sources : undefined,
     });
 
     const messages = await Message.find({ conversationId }).sort({

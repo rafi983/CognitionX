@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getGeminiResponse } from "@/lib/gemini";
 import { MAGIC_COMMANDS } from "@/lib/magicCommands";
+import { getRAGService } from "@/lib/ragService";
 
 export async function POST(req) {
   try {
@@ -58,6 +59,22 @@ export async function POST(req) {
 
       case "/brainstorm":
         result = await brainstormIdeas(messages, args, model);
+        break;
+
+      case "/kb":
+        result = "Opening Knowledge Base interface...";
+        break;
+
+      case "/search":
+        result = await searchKnowledgeBase(args);
+        break;
+
+      case "/ask":
+        result = await askWithContext(args, model);
+        break;
+
+      case "/docs":
+        result = await getKnowledgeBaseStats();
         break;
 
       default:
@@ -198,4 +215,73 @@ async function brainstormIdeas(messages, topic, model) {
     model,
   );
   return `# 🧠 Brainstorming Session\n\n${ideas}`;
+}
+
+async function searchKnowledgeBase(query) {
+  if (!query || query.trim().length === 0) {
+    return "# 🔍 Knowledge Base Search\n\nPlease provide a search query. Example: `/search artificial intelligence`";
+  }
+
+  try {
+    const ragService = getRAGService();
+    const results = ragService.searchContext(query, { topK: 5 });
+
+    if (results.length === 0) {
+      return `# 🔍 Knowledge Base Search\n\nNo results found for: "${query}"\n\nTry different keywords or upload relevant documents to your knowledge base.`;
+    }
+
+    const resultsList = results
+      .map((result, index) => {
+        const similarity = Math.round(result.similarity * 100);
+        return `${index + 1}. **${result.metadata.fileName}** (${similarity}% match)\n   ${result.preview}`;
+      })
+      .join("\n\n");
+
+    return `# 🔍 Knowledge Base Search Results\n\n**Query:** "${query}"\n**Found ${results.length} results:**\n\n${resultsList}`;
+  } catch (error) {
+    return `# ❌ Search Error\n\nFailed to search knowledge base: ${error.message}`;
+  }
+}
+
+async function askWithContext(question, model) {
+  if (!question || question.trim().length === 0) {
+    return "# 🧠 Ask with Context\n\nPlease provide a question. Example: `/ask What is machine learning?`";
+  }
+
+  try {
+    const ragService = getRAGService();
+    const contextualPrompt = ragService.generateContextualPrompt(question);
+
+    if (!contextualPrompt.hasContext) {
+      return `# 🧠 Ask with Context\n\n**Question:** "${question}"\n\n**Answer:** No relevant context found in your knowledge base. The question will be answered using general knowledge.\n\nTo get better answers, try uploading relevant documents to your knowledge base.`;
+    }
+
+    const answer = await getGeminiResponse(
+      [{ role: "user", content: contextualPrompt.prompt }],
+      model,
+    );
+
+    const sourcesList = contextualPrompt.sources
+      .map(source => `- ${source.fileName} (${Math.round(source.similarity * 100)}% relevant)`)
+      .join('\n');
+
+    return `# 🧠 Ask with Context\n\n**Question:** "${question}"\n\n**Sources used:**\n${sourcesList}\n\n**Answer:** ${answer}`;
+  } catch (error) {
+    return `# ❌ Context Error\n\nFailed to get contextual answer: ${error.message}`;
+  }
+}
+
+async function getKnowledgeBaseStats() {
+  try {
+    const ragService = getRAGService();
+    const stats = ragService.getStats();
+
+    if (stats.totalDocuments === 0) {
+      return `# 📊 Knowledge Base Statistics\n\n**Status:** Empty\n\nYour knowledge base is empty. Upload some documents to get started!\n\n**Supported formats:** PDF, DOCX, TXT, MD`;
+    }
+
+    return `# 📊 Knowledge Base Statistics\n\n- **Total Documents:** ${stats.totalDocuments}\n- **Total Words:** ${stats.totalWords.toLocaleString()}\n- **Average Words per Document:** ${stats.averageWordsPerDocument}\n\n*Use `/kb` to manage your knowledge base or `/search [query]` to find specific information.*`;
+  } catch (error) {
+    return `# ❌ Stats Error\n\nFailed to get knowledge base statistics: ${error.message}`;
+  }
 }

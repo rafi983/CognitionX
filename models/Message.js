@@ -9,6 +9,13 @@ const MessageSchema = new mongoose.Schema({
   role: { type: String, enum: ["user", "assistant"], required: true },
   content: { type: String, required: true },
   imageUrl: { type: String },
+  ragContext: [
+    {
+      id: String,
+      fileName: String,
+      similarity: Number,
+    },
+  ],
   createdAt: { type: Date, default: Date.now },
 });
 

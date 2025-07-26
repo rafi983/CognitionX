@@ -18,7 +18,7 @@ CognitionX is a comprehensive AI-powered conversation platform built with Next.j
 - **Smart conversation listing** in sidebar with chronological organization
 - **Seamless conversation switching** between multiple chat sessions
 
-## ✨ Extra Features (13 Advanced Capabilities)
+## ✨ Extra Features (14 Advanced Capabilities)
 
 ### 1. 🔐 **Authentication System**
 - **Secure user registration and login** with JWT token management
@@ -54,7 +54,44 @@ CognitionX is a comprehensive AI-powered conversation platform built with Next.j
 - **Export comparison data** in multiple formats
 - **Visual comparison interface** with clear model differentiation
 
-### 5. 🎭 **Persona System**
+### 5. 🧠 **RAG Knowledge Base (Retrieval-Augmented Generation)**
+- **Document Upload System**:
+  - Drag-and-drop interface for .txt and .md files
+  - Bulk document upload with progress tracking
+  - File validation and error handling
+  - Document preview and metadata extraction
+- **Smart Document Processing**:
+  - Automatic text extraction and chunking
+  - TF-IDF vectorization for semantic search
+  - Word count and statistics tracking
+  - Persistent document storage with MongoDB
+- **Intelligent Search & Retrieval**:
+  - Real-time semantic search across uploaded documents
+  - Similarity scoring with percentage match indicators
+  - Context-aware search results with document previews
+  - Search history and query optimization
+- **AI Context Integration**:
+  - "Use Context" feature to inject document content into conversations
+  - Smart prompt generation with document excerpts
+  - Seamless integration with main chat interface
+  - Context-aware AI responses based on your documents
+- **Knowledge Base Management**:
+  - Document library with organized file listings
+  - Individual document deletion and bulk clear operations
+  - Usage analytics and storage statistics
+  - Document metadata tracking (file type, word count, upload date)
+- **Interactive Instructions Modal**:
+  - Comprehensive user guide with step-by-step workflow
+  - Example use cases (research papers, documentation, notes)
+  - Pro tips for optimal usage and best practices
+  - Easy access via help button in RAG interface
+- **Advanced Features**:
+  - Background scroll lock for modal interactions
+  - Responsive design with glassmorphism UI
+  - Real-time search with debouncing
+  - Error handling and user feedback notifications
+
+### 6. 🎭 **Persona System**
 - **Multiple AI personalities** with distinct conversation styles
 - **Pre-built persona templates** (Professional, Creative, Technical, etc.)
 - **Custom persona configuration** with personality traits
@@ -62,7 +99,7 @@ CognitionX is a comprehensive AI-powered conversation platform built with Next.j
 - **Dynamic persona switching** within conversations
 - **Persona behavior customization** for specialized use cases
 
-### 6. 🎤 **Speech Integration**
+### 7. 🎤 **Speech Integration**
 - **Voice input functionality** with speech-to-text conversion
 - **Voice controls** for hands-free interaction
 - **Audio feedback** capabilities for responses
@@ -70,7 +107,7 @@ CognitionX is a comprehensive AI-powered conversation platform built with Next.j
 - **Voice command processing** with magic command integration
 - **Microphone permission management** and error handling
 
-### 7. ✨ **Magic Commands System**
+### 8. ✨ **Magic Commands System**
 - **Special command syntax** (e.g., `/help`, `/brainstorm`, `/analyze`)
 - **Auto-completion** and command suggestions
 - **Built-in command library** with extensible architecture
@@ -78,7 +115,7 @@ CognitionX is a comprehensive AI-powered conversation platform built with Next.j
 - **Command help system** with documentation
 - **Context-aware commands** that understand conversation state
 
-### 8. 🖼️ **Image Upload & Processing**
+### 9. 🖼️ **Image Upload & Processing**
 - **Drag-and-drop image upload** with preview functionality
 - **Multiple image format support** (PNG, JPG, GIF, WebP)
 - **Image attachment to messages** with AI vision capabilities
@@ -86,7 +123,7 @@ CognitionX is a comprehensive AI-powered conversation platform built with Next.j
 - **Visual image gallery** within conversations
 - **Image analysis** using Gemini's vision capabilities
 
-### 9. 🎨 **Theme System**
+### 10. 🎨 **Theme System**
 - **Dark/Light mode toggle** with system preference detection
 - **Custom theme configuration** with color scheme options
 - **Responsive design** across all device types
@@ -94,7 +131,7 @@ CognitionX is a comprehensive AI-powered conversation platform built with Next.j
 - **Accessibility-focused** color contrast and typography
 - **Modern gradient designs** with smooth animations
 
-### 10. 🌊 **Streaming Responses**
+### 11. 🌊 **Streaming Responses**
 - **Real-time message streaming** from AI models
 - **Progressive response rendering** with typing indicators
 - **Smooth user experience** with live updates
@@ -102,7 +139,7 @@ CognitionX is a comprehensive AI-powered conversation platform built with Next.j
 - **Error handling** for interrupted streams
 - **Optimized performance** for long responses
 
-### 11. 🤖 **Multiple Gemini Models Support**
+### 12. 🤖 **Multiple Gemini Models Support**
 - **Dynamic model fetching** from Google's API
 - **Model selection interface** with detailed specifications
 - **Support for latest Gemini versions** with automatic updates
@@ -110,7 +147,7 @@ CognitionX is a comprehensive AI-powered conversation platform built with Next.j
 - **Model-specific optimizations** and timeout configurations
 - **Seamless model switching** without conversation interruption
 
-### 12. 🛠️ **Message Management Features**
+### 13. 🛠️ **Message Management Features**
 - **Copy Functionality**:
   - Copy individual messages to clipboard
   - Copy code blocks with syntax preservation
@@ -125,7 +162,7 @@ CognitionX is a comprehensive AI-powered conversation platform built with Next.j
   - Multiple regeneration attempts
   - Compare different response variations
 
-### 13. 📤 **Export Functionality**
+### 14. 📤 **Export Functionality**
 - **Individual conversation export** in multiple formats
 - **Bulk conversation export** for data backup
 - **Format options**: JSON, PDF, TXT, Markdown
@@ -227,6 +264,7 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 - **View Analytics** (`/analytics`) for usage insights
 - **Use Magic Commands** like `/help` for special functions
 - **Upload Images** for vision-based AI interactions
+- **Utilize RAG Knowledge Base** for enhanced document-based conversations
 
 ## 🤝 Contributing
 

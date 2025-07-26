@@ -9,6 +9,7 @@ import {
   BarChart3,
   GitCompare,
   Code,
+  Brain,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { ExportButton } from "./ExportButton";
@@ -109,6 +110,13 @@ export function Sidebar() {
           >
             <MessageCircle className="w-4 h-4" />
             <span className="text-sm">Create Chat</span>
+          </Link>
+          <Link
+            href="/rag"
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-900 transition-colors"
+          >
+            <Brain className="w-4 h-4" />
+            <span className="text-sm">Knowledge Base</span>
           </Link>
           <Link
             href="/compare"
