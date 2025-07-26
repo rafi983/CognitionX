@@ -288,6 +288,14 @@ export default function WelcomePage() {
     setCommandSuggestions([]);
   };
 
+  const handleSuggestionClick = (suggestion) => {
+    setInput(suggestion);
+    // Small delay to ensure the input is updated before submitting
+    setTimeout(() => {
+      handleSubmit(suggestion);
+    }, 50);
+  };
+
   return (
     <div className="flex h-screen mx-auto bg-white dark:bg-gray-900 max-h-screen">
       <Sidebar />
@@ -314,7 +322,7 @@ export default function WelcomePage() {
               <button
                 key={i}
                 className="w-full flex items-center space-x-3 p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all text-left bg-white dark:bg-gray-800"
-                onClick={() => handleSend(s)}
+                onClick={() => handleSuggestionClick(s)}
                 disabled={loading}
               >
                 <Zap className="w-5 h-5 text-yellow-500 flex-shrink-0" />

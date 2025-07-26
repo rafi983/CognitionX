@@ -102,7 +102,7 @@ export function Sidebar() {
           <ThemeToggle />
         </div>
       </div>
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-hide">
         <div className="space-y-1">
           <Link
             href="/"

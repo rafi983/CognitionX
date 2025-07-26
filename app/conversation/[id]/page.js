@@ -352,6 +352,11 @@ export default function ConversationPage() {
           onSelectCommandSuggestion={handleSelectCommandSuggestion}
           speechError={speechError}
           error={error}
+          currentPersona={getCurrentPersona()}
+          showPersonaSettings={showPersonaSettings}
+          onShowPersonaSettings={() => setShowPersonaSettings(true)}
+          onHidePersonaSettings={() => setShowPersonaSettings(false)}
+          onCustomPromptSave={handleCustomPromptSave}
         />
       </main>
     </div>

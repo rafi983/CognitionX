@@ -183,7 +183,7 @@ export function RAGInstructionsModal({ isOpen, onClose }) {
               <li>• Use descriptive filenames for better organization</li>
               <li>• Break large documents into smaller, focused files</li>
               <li>• Search with specific keywords for better results</li>
-              <li>• Use "Use Context" to get AI responses based on your documents</li>
+              <li>• Use &quot;Use Context&quot; to get AI responses based on your documents</li>
               <li>• Regularly update your knowledge base with new content</li>
             </ul>
           </div>
