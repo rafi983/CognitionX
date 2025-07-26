@@ -107,7 +107,9 @@ export function ModelComparisonInterface({
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
               Comparison Results
             </h2>
-            <p className="text-gray-600 dark:text-gray-300 mt-1">"{prompt}"</p>
+            <p className="text-gray-600 dark:text-gray-300 mt-1">
+              &ldquo;{prompt}&rdquo;
+            </p>
           </div>
           <div className="flex space-x-2">
             <button
