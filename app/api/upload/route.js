@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
-import path from "path";
 
 export async function POST(req) {
   try {
@@ -16,40 +13,53 @@ export async function POST(req) {
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // Validate file type
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: "Invalid file type. Please upload an image file." },
+        { status: 400 },
+      );
+    }
 
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: "File too large. Maximum size is 10MB." },
+        { status: 400 },
+      );
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
     const timestamp = Date.now();
     const fileName = `${uuidv4()}-${timestamp}-${file.name.replace(/\s/g, "_")}`;
 
-    // Create uploads directory outside of the code directory
-    // This will store files at C:\Users\ACER\Desktop\CognitionX-uploads
-    const uploadsDir = path.join(process.cwd(), "..", "CognitionX-uploads");
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (error) {
-      // Directory might already exist, continue
-    }
-
-    const filePath = join(uploadsDir, fileName);
-    await writeFile(filePath, buffer);
-
     // Convert the buffer to base64 for immediate use with Gemini
-    // No need to reference the file path since we'll use base64 directly
     const base64Image = buffer.toString("base64");
     const mimeType = file.type || "image/jpeg";
 
     return NextResponse.json({
       success: true,
-      // Instead of returning a URL to a file path, we'll just return a unique identifier
-      // that can be used for reference in the UI, but won't actually be used to fetch the image
-      url: `memory-only-${fileName}`,
-      // The base64 data is what will be used both for display and for the API
+      // Return a unique identifier for the UI
+      url: `upload-${fileName}`,
+      // The base64 data is what will be used for both display and Gemini API
       base64Data: `data:${mimeType};base64,${base64Image}`,
+      // Additional metadata
+      fileName: file.name,
+      fileSize: file.size,
+      mimeType: mimeType,
     });
   } catch (error) {
     console.error("Image upload error:", error);
     return NextResponse.json(
-      { error: "Error uploading image" },
+      { error: "Error processing image" },
       { status: 500 },
     );
   }
