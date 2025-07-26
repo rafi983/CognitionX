@@ -12,6 +12,7 @@ import {
   Save,
   Trash2,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { ModelSelector } from "./playground/ModelSelector";
 import { ParameterControls } from "./playground/ParameterControls";
 import { PromptEditor } from "./playground/PromptEditor";
@@ -22,6 +23,13 @@ import { TestHistory } from "./playground/TestHistory";
 import { PresetManager } from "./playground/PresetManager";
 
 export function APIPlayground({ models }) {
+  const { user } = useAuth();
+
+  // Helper function to get user-specific localStorage keys
+  const getStorageKey = (key) => {
+    return user ? `playground_${key}_${user.id}` : `playground_${key}_guest`;
+  };
+
   // State for current test configuration
   const [selectedModel, setSelectedModel] = useState("");
   const [parameters, setParameters] = useState({
@@ -57,8 +65,10 @@ export function APIPlayground({ models }) {
 
   // Load saved data from localStorage
   useEffect(() => {
+    if (!user) return; // Wait for user to be loaded
+
     // Load test history first
-    const savedHistory = localStorage.getItem("playground_history");
+    const savedHistory = localStorage.getItem(getStorageKey("history"));
     if (savedHistory) {
       try {
         const parsedHistory = JSON.parse(savedHistory);
@@ -70,7 +80,7 @@ export function APIPlayground({ models }) {
     }
 
     // Load presets
-    const savedPresets = localStorage.getItem("playground_presets");
+    const savedPresets = localStorage.getItem(getStorageKey("presets"));
     if (savedPresets) {
       try {
         const parsedPresets = JSON.parse(savedPresets);
@@ -82,7 +92,7 @@ export function APIPlayground({ models }) {
     }
 
     // Load current state (prompt, parameters, response, etc.)
-    const savedState = localStorage.getItem("playground_current_state");
+    const savedState = localStorage.getItem(getStorageKey("current_state"));
     if (savedState) {
       try {
         const state = JSON.parse(savedState);
@@ -101,10 +111,12 @@ export function APIPlayground({ models }) {
         console.error("Failed to load current state:", e);
       }
     }
-  }, [models]);
+  }, [models, user]);
 
   // Save current state to localStorage whenever key values change
   useEffect(() => {
+    if (!user) return; // Don't save if user not loaded
+
     const currentState = {
       selectedModel,
       parameters,
@@ -115,24 +127,28 @@ export function APIPlayground({ models }) {
       timestamp: Date.now(),
     };
     localStorage.setItem(
-      "playground_current_state",
+      getStorageKey("current_state"),
       JSON.stringify(currentState),
     );
-  }, [selectedModel, parameters, prompt, response, metrics, activeTab]);
+  }, [selectedModel, parameters, prompt, response, metrics, activeTab, user]);
 
   // Save test history to localStorage whenever it changes
   useEffect(() => {
+    if (!user) return; // Don't save if user not loaded
+
     if (testHistory.length > 0) {
-      localStorage.setItem("playground_history", JSON.stringify(testHistory));
+      localStorage.setItem(getStorageKey("history"), JSON.stringify(testHistory));
     }
-  }, [testHistory]);
+  }, [testHistory, user]);
 
   // Save presets to localStorage whenever they change
   useEffect(() => {
+    if (!user) return; // Don't save if user not loaded
+
     if (savedPresets.length > 0) {
-      localStorage.setItem("playground_presets", JSON.stringify(savedPresets));
+      localStorage.setItem(getStorageKey("presets"), JSON.stringify(savedPresets));
     }
-  }, [savedPresets]);
+  }, [savedPresets, user]);
 
   const executeTest = async () => {
     if (!prompt.trim() || !selectedModel) {
