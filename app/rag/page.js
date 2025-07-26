@@ -102,11 +102,17 @@ export default function RAGPage() {
 
     if (successCount > 0) {
       showNotification(`Successfully uploaded ${successCount} document(s)`, 'success');
-      loadDocuments();
-      loadStats();
+      // Refresh the document list and stats
+      await loadDocuments();
+      await loadStats();
     }
 
     setUploading(false);
+
+    // Clear the file input so the same file can be uploaded again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSearch = async () => {

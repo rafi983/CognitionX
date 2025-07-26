@@ -15,7 +15,12 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cc3d5ba9-eade-40a9-89fa-e0ce83779d95" name="Changes" comment="" />
+    <list default="true" id="cc3d5ba9-eade-40a9-89fa-e0ce83779d95" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/rag/page.js" beforeDir="false" afterPath="$PROJECT_DIR$/app/rag/page.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/ragService.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/ragService.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/vectorStore.js" beforeDir="false" afterPath="$PROJECT_DIR$/lib/vectorStore.js" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -85,6 +90,8 @@
       <updated>1753530034070</updated>
       <workItem from="1753530034072" duration="7297000" />
       <workItem from="1753542240517" duration="1163000" />
+      <workItem from="1753544608549" duration="567000" />
+      <workItem from="1753545441902" duration="1536000" />
     </task>
     <servers />
   </component>
